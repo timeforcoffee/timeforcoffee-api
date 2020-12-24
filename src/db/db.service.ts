@@ -33,4 +33,29 @@ export class DbService {
         }
         return id
     }
+
+    async getApiKey(id: string): Promise<{ apikey: string; apiid: string }> {
+        // select zapikey as apikey, zapiid as apiid from ZTFCSTATIONMODEL where ZID =
+        const idN = parseInt(id)
+        return new Promise(function (resolve, reject) {
+            db.all(
+                'select zapikey as apikey, zapiid as apiid from ZTFCSTATIONMODEL where ZID = ?',
+                [id],
+                function (err, rows) {
+                    if (err) {
+                        reject(err)
+                    } else {
+                        if (rows[0] && rows[0].apikey) {
+                            if (!rows[0].apiid) {
+                                rows[0].apiid = id
+                            }
+                            resolve(rows[0])
+                        } else {
+                            resolve({ apikey: 'zvv', apiid: idN.toString() })
+                        }
+                    }
+                },
+            )
+        })
+    }
 }

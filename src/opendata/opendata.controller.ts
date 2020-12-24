@@ -1,14 +1,15 @@
 import { Controller, Get, Logger, Param } from '@nestjs/common'
 import * as moment from 'moment-timezone'
 import axios from 'axios'
+import { stripId } from '../ch/ch.service'
 
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
-@Controller('/')
+@Controller('/api/ch/')
 export class OpendataController {
     private readonly logger = new Logger(OpendataController.name)
 
-    @Get('api/ch/connections/:from/:to/:datetime')
+    @Get('connections/:from/:to/:datetime')
     async connections(
         @Param('from') from: string,
         @Param('to') to: string,
@@ -32,10 +33,11 @@ export class OpendataController {
                     )
                 })
                 .map(connection => {
+                    //missing arrival thing (the züri-zug thing)
                     return connection.sections[0].journey.passList.map(pass => {
                         return {
                             name: pass.station.name,
-                            id: pass.station.id.replace(/^0*/, ''),
+                            id: stripId(pass.station.id),
                             location: {
                                 lat: pass.station.coordinate.x,
                                 lng: pass.station.coordinate.y,

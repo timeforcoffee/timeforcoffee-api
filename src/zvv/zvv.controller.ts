@@ -4,12 +4,14 @@ import { AllHtmlEntities } from 'html-entities'
 import * as moment from 'moment-timezone'
 import { Moment } from 'moment-timezone'
 import { DbService } from '../db/db.service'
+import { DeparturesType, DepartureType } from '../ch/ch.type'
+import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 
 const stationBaseUrl =
     'http://online.fahrplan.zvv.ch/bin/stboard.exe/dny?dirInput=&boardType=dep&start=1&tpl=stbResult2json&input='
 
 const stationLimit = (id: string): string => {
-    id = id.replace(/^0*/, '')
+    id = stripId(id)
     switch (id) {
         case '8503000': // Zürich HB
         case '8507000': // bern
@@ -38,15 +40,13 @@ const sanitizeLine = (line: string): string => {
 
 const getDateTime = (input: { date: string; time: string }): Moment | null => {
     if (input && input.date && input.time) {
-        return moment(input.date + ' ' + input.time, 'DD.MM.YYYY hh:mm', 'Europe/Zurich')
+        return moment(input.date + ' ' + input.time, 'DD.MM.YYYY HH:mm', 'Europe/Zurich')
     }
     return null
 }
 const getFormattedDateTime = (input: { date: string; time: string }): string | null => {
     return getDateTime(input)?.format(OUTPUT_DATE_FORMAT)
 }
-
-const OUTPUT_DATE_FORMAT = 'YYYY-MM-DDTHH:mm:ss.SSSZ'
 
 const mapType = (type: string): string => {
     switch (type) {
@@ -61,31 +61,6 @@ const mapType = (type: string): string => {
     }
 }
 
-export class DepartureType {
-    dt: string
-    accessible: boolean
-    arrival: { scheduled: string; realtime?: string | null }
-    name: string
-    departure: { scheduled: string; realtime?: string | null }
-    source: string
-    id: string
-    to: string
-    colors: { fg: string; bg: string }
-    platform: string
-    type: string
-}
-
-export class MetaType {
-    station_id: string
-    station_name: string
-}
-
-export class DeparturesType {
-    meta: MetaType
-    departures: DepartureType[]
-    original: any
-}
-
 function getRealtime(pass, deptOrArr) {
     const prognosis = pass.prognosis
 
@@ -93,7 +68,14 @@ function getRealtime(pass, deptOrArr) {
     }
 }
 
-@Controller('/')
+const hasAccessible = (code?: string): boolean => {
+    if (!code) {
+        return false
+    }
+    return code.includes('NF') || code.includes('6') || code.includes('9')
+}
+
+@Controller('/api/zvv/')
 export class ZvvController {
     constructor(private dbService: DbService) {}
     private readonly logger = new Logger(ZvvController.name)
@@ -102,7 +84,7 @@ export class ZvvController {
         product: any
         mainLocation: any
         locations: string | any[]
-        attributes_bfr: { code: string | string[] }[]
+        attributes_bfr: { code: string }[]
     }): Promise<DepartureType> => {
         const product = connection.product
         const mainLocation = connection.mainLocation
@@ -127,14 +109,14 @@ export class ZvvController {
             colors: { fg: '#' + product.color?.fg, bg: '#' + product.color?.bg },
             source: 'zvv',
             id: await this.dbService.zvvToSbbId(lastLocation.location?.id),
-            accessible: connection.attributes_bfr?.[0]?.code?.includes('NF') || false,
+            accessible: hasAccessible(connection.attributes_bfr?.[0]?.code) || false,
             platform: mainLocation.platform || '',
             to: AllHtmlEntities.decode(product.direction),
         }
     }
-    @Get('api/zvv/stationboard/:id')
+    @Get('stationboard/:id')
     async stationboard(@Param('id') id: string): Promise<DeparturesType> {
-        id = id.replace(/^0*/, '')
+        id = stripId(id)
         const url = `${stationBaseUrl}${id}&maxJourneys=${stationLimit(id)}`
         this.logger.debug(`Get ${url}`)
         const response = await axios.get(url)

@@ -3982,6 +3982,11 @@ lru-cache@^6.0.0:
   dependencies:
     yallist "^4.0.0"
 
+luhn-generator@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/luhn-generator/-/luhn-generator-0.6.0.tgz#50fdf07b51b33c68959ccd984a6c173bc64c0c9a"
+  integrity sha512-x47dFxFzpd8Tb6GtHF+hztTd7k2bXWoORDYbF3rYZd6fppGdZmn1Y66LsXmyPKI4AYkHyAZwZNBn4syKjK49Lw==
+
 macos-release@^2.2.0:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/macos-release/-/macos-release-2.4.1.tgz#64033d0ec6a5e6375155a74b1a1eba8e509820ac"
