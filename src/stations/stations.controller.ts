@@ -7,7 +7,7 @@ const stationURL =
 @Controller('/')
 export class StationsController {
     constructor(private helpersService: HelpersService) {}
-    @Get('api/ch/stations/:name')
+    @Get('api/:api/stations/:name')
     async findStation(@Param('name') name: string) {
         const response = await this.helpersService.callApi(`${stationURL}${name.replace(' ', '+')}`)
         if (response.error) {

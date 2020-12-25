@@ -33,6 +33,7 @@ export class ChController {
                 return this.combine(id, this.bltController.stationboard(api.apiid))
             case 'odp':
             case 'vbl':
+            case 'bvb':
                 return this.combine(id, this.searchController.stationboard(id))
             default:
                 return this.zvvController.stationboard(id)
