@@ -6,6 +6,7 @@ import { Moment } from 'moment-timezone'
 import { DbService } from '../db/db.service'
 import { DeparturesType, DepartureType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
+import { HelpersService } from '../helpers/helpers.service'
 
 const stationBaseUrl =
     'http://online.fahrplan.zvv.ch/bin/stboard.exe/dny?dirInput=&boardType=dep&start=1&tpl=stbResult2json&input='
@@ -27,10 +28,11 @@ const stationLimit = (id: string): string => {
 
 const sanitizeLine = (line: string): string => {
     line = AllHtmlEntities.decode(line)
+
     return line
         .replace(/S( )+/, 'S')
         .replace(/SN( )+/, 'SN')
-        .replace(/IC( )+.*/, 'IC')
+        .replace(/IC( )+/, 'IC')
         .replace(/IR( )+.*/, 'IR')
         .replace('Tro( )+', '')
         .replace('Trm( )+', '')
@@ -61,13 +63,6 @@ const mapType = (type: string): string => {
     }
 }
 
-function getRealtime(pass, deptOrArr) {
-    const prognosis = pass.prognosis
-
-    if (pass.realtimeAvailability === 'RT_BHF') {
-    }
-}
-
 const hasAccessible = (code?: string): boolean => {
     if (!code) {
         return false
@@ -77,7 +72,7 @@ const hasAccessible = (code?: string): boolean => {
 
 @Controller('/api/zvv/')
 export class ZvvController {
-    constructor(private dbService: DbService) {}
+    constructor(private dbService: DbService, private helpersService: HelpersService) {}
     private readonly logger = new Logger(ZvvController.name)
 
     getDeparture = async (connection: {
@@ -104,7 +99,7 @@ export class ZvvController {
                 realtime: getFormattedDateTime(lastLocation.realTime) || undefined,
             },
             type: mapType(product.icon),
-            name: sanitizeLine(product.line),
+            name: sanitizeLine(product.line || product.name),
             dt: realtime || scheduled,
             colors: { fg: '#' + product.color?.fg, bg: '#' + product.color?.bg },
             source: 'zvv',
@@ -118,15 +113,15 @@ export class ZvvController {
     async stationboard(@Param('id') id: string): Promise<DeparturesType> {
         id = stripId(id)
         const url = `${stationBaseUrl}${id}&maxJourneys=${stationLimit(id)}`
-        this.logger.debug(`Get ${url}`)
-        const response = await axios.get(url)
 
-        const data = response.data
+        const data = await this.helpersService.callApi(url)
+        if (data.error) {
+            return data
+        }
 
         return {
             meta: { station_id: id, station_name: AllHtmlEntities.decode(data.station.name) },
             departures: await this.getConnections(data.connections as any[]),
-            original: data,
         }
     }
 

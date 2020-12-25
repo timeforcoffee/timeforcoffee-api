@@ -4,6 +4,7 @@ import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import * as moment from 'moment-timezone'
 import axios from 'axios'
 import * as luhn from 'luhn-generator'
+import { HelpersService } from '../helpers/helpers.service'
 
 function formatName(data: any): string {
     const splitname = data.name.split(/ /, 2)
@@ -69,7 +70,7 @@ function mapStationName(station: string) {
 @Injectable()
 export class WmlService {
     private readonly logger = new Logger(WmlService.name)
-
+    constructor(private helpersService: HelpersService) {}
     async stationboard(id: string, urlPre: string): Promise<DeparturesType> {
         //Promise<DeparturesType> {
         id = stripId(id)
@@ -79,10 +80,11 @@ export class WmlService {
         const url = `${urlPre}${shortId}/${now.format(WML_TIME_FORMAT)}/${now
             .add(2, 'hours')
             .format(WML_TIME_FORMAT)}`
-        this.logger.debug(`Get ${url}`)
-        const response = await axios.get(url)
 
-        const data = response.data
+        const data = await this.helpersService.callApi(url)
+        if (data.error) {
+            return data
+        }
         return {
             meta: { station_id: id, station_name: formatName(data) },
             departures: data.departures.map(departure => {

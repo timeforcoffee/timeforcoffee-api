@@ -10,7 +10,7 @@ const db = new sqlite3.Database('./stations.sqlite', sqlite3.OPEN_READONLY, err 
 
 @Injectable()
 export class DbService {
-    async zvvToSbbId(id: string): Promise<string> {
+    async zvvToSbbId(id: string): Promise<string | null> {
         const idN = parseInt(id)
         if (idN < 300000 && idN > 290000) {
             return new Promise(function (resolve, reject) {
@@ -24,7 +24,7 @@ export class DbService {
                             if (rows[0]) {
                                 resolve(rows[0].sbb_id)
                             } else {
-                                resolve(id)
+                                resolve(null)
                             }
                         }
                     },

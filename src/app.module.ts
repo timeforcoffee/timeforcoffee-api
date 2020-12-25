@@ -7,9 +7,10 @@ import { ChModule } from './ch/ch.module';
 import { OstModule } from './ost/ost.module';
 import { WmlModule } from './wml/wml.module';
 import { BltModule } from './blt/blt.module';
+import { HelpersModule } from './helpers/helpers.module';
 
 @Module({
-    imports: [StationsModule, DbModule, ZvvModule, OpendataModule, ChModule, OstModule, WmlModule, BltModule],
+    imports: [StationsModule, DbModule, ZvvModule, OpendataModule, ChModule, OstModule, WmlModule, BltModule, HelpersModule],
     controllers: [],
     providers: [],
 })
