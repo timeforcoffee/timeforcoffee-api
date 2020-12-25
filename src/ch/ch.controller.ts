@@ -8,6 +8,7 @@ import * as moment from 'moment-timezone'
 import { stripId } from './ch.service'
 import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
+import { SearchController } from '../search/search.controller'
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
 @Controller('/api/ch/')
@@ -17,20 +18,22 @@ export class ChController {
         private ostController: OstController,
         private bltController: BltController,
         private opendataController: OpendataController,
+        private searchController: SearchController,
         private dbService: DbService,
         private helpersService: HelpersService,
     ) {}
     @Get('stationboard/:id')
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         const api = await this.dbService.getApiKey(id)
-
+        console.log(api)
         switch (api.apikey) {
             case 'ost':
                 return this.combine(id, this.ostController.stationboard(api.apiid))
             case 'blt':
                 return this.combine(id, this.bltController.stationboard(api.apiid))
             case 'odp':
-                return this.combine(id, this.opendataController.stationboard(api.apiid))
+            case 'vbl':
+                return this.combine(id, this.searchController.stationboard(id))
             default:
                 return this.zvvController.stationboard(id)
         }
@@ -83,12 +86,17 @@ export class ChController {
                 }
                 if (otherDept.name && !dept.name) {
                     dept.name = otherDept.name
-                    dept.source += ', name: ' + otherDept.name
+                    dept.source += ', name: ' + otherDept.source
                 }
                 if (
-                    otherDept.departure.realtime &&
-                    otherDept.departure.realtime !== otherDept.departure.scheduled
+                    otherDept.colors &&
+                    dept.colors.fg === '#000000' &&
+                    dept.colors.bg.toLowerCase() === '#ffffff'
                 ) {
+                    dept.colors = otherDept.colors
+                    dept.source += ', colors: ' + otherDept.source
+                }
+                if (otherDept.departure.realtime) {
                     dept.departure.realtime = otherDept.departure.realtime
                     dept.source += ', realtime: ' + otherDept.source
                 }

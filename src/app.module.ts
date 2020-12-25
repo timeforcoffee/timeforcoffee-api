@@ -8,9 +8,10 @@ import { OstModule } from './ost/ost.module';
 import { WmlModule } from './wml/wml.module';
 import { BltModule } from './blt/blt.module';
 import { HelpersModule } from './helpers/helpers.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
-    imports: [StationsModule, DbModule, ZvvModule, OpendataModule, ChModule, OstModule, WmlModule, BltModule, HelpersModule],
+    imports: [StationsModule, DbModule, ZvvModule, OpendataModule, ChModule, OstModule, WmlModule, BltModule, HelpersModule, SearchModule],
     controllers: [],
     providers: [],
 })

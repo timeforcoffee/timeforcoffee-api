@@ -1,5 +1,4 @@
 import { Controller, Get, Param } from '@nestjs/common'
-import axios from 'axios'
 import { HelpersService } from '../helpers/helpers.service'
 
 const stationURL =
@@ -11,6 +10,9 @@ export class StationsController {
     @Get('api/ch/stations/:name')
     async findStation(@Param('name') name: string) {
         const response = await this.helpersService.callApi(`${stationURL}${name.replace(' ', '+')}`)
+        if (response.error) {
+            return response
+        }
         const json = (response as string)
             .replace(';SLs.showSuggestion();', '')
             .replace('SLs.sls=', '')

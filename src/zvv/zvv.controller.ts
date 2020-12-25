@@ -4,7 +4,7 @@ import { AllHtmlEntities } from 'html-entities'
 import * as moment from 'moment-timezone'
 import { Moment } from 'moment-timezone'
 import { DbService } from '../db/db.service'
-import { DeparturesType, DepartureType } from '../ch/ch.type'
+import { DeparturesError, DeparturesType, DepartureType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import { HelpersService } from '../helpers/helpers.service'
 
@@ -110,7 +110,7 @@ export class ZvvController {
         }
     }
     @Get('stationboard/:id')
-    async stationboard(@Param('id') id: string): Promise<DeparturesType> {
+    async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
         const url = `${stationBaseUrl}${id}&maxJourneys=${stationLimit(id)}`
 
@@ -119,6 +119,9 @@ export class ZvvController {
             return data
         }
 
+        if (!data.station || !data.connections) {
+            return { error: 'Wrong data format from data provider' }
+        }
         return {
             meta: { station_id: id, station_name: AllHtmlEntities.decode(data.station.name) },
             departures: await this.getConnections(data.connections as any[]),

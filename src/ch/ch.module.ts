@@ -6,9 +6,18 @@ import { OstModule } from '../ost/ost.module'
 import { BltModule } from '../blt/blt.module'
 import { HelpersModule } from '../helpers/helpers.module'
 import { OpendataModule } from '../opendata/opendata.module'
+import { SearchModule } from '../search/search.module'
 
 @Module({
     controllers: [ChController],
-    imports: [ZvvModule, OstModule, BltModule, OpendataModule, DbModule, HelpersModule],
+    imports: [
+        ZvvModule,
+        OstModule,
+        BltModule,
+        OpendataModule,
+        SearchModule,
+        DbModule,
+        HelpersModule,
+    ],
 })
 export class ChModule {}

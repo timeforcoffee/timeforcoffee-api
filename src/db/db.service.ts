@@ -39,18 +39,24 @@ export class DbService {
         const idN = parseInt(id)
         return new Promise(function (resolve, reject) {
             db.all(
-                'select zapikey as apikey, zapiid as apiid from ZTFCSTATIONMODEL where ZID = ?',
+                'select zcounty as county, zapikey as apikey, zapiid as apiid from ZTFCSTATIONMODEL where ZID = ?',
                 [idN],
                 function (err, rows) {
                     if (err) {
                         reject(err)
                     } else {
-                        console.log(rows[0])
-                        if (rows[0] && rows[0].apikey) {
-                            if (!rows[0].apiid) {
-                                rows[0].apiid = id
+                        if (rows[0]) {
+                            if (rows[0].apikey) {
+                                if (!rows[0].apiid) {
+                                    rows[0].apiid = id
+                                }
+                                resolve(rows[0])
+                            } else if (rows[0].county !== 'Zürich') {
+                                // if not from Zürich, also call search
+                                resolve({ apikey: 'search', apiid: idN.toString() })
+                            } else {
+                                resolve({ apikey: 'zvv', apiid: idN.toString() })
                             }
-                            resolve(rows[0])
                         } else {
                             resolve({ apikey: 'zvv', apiid: idN.toString() })
                         }
