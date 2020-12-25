@@ -40,11 +40,12 @@ export class DbService {
         return new Promise(function (resolve, reject) {
             db.all(
                 'select zapikey as apikey, zapiid as apiid from ZTFCSTATIONMODEL where ZID = ?',
-                [id],
+                [idN],
                 function (err, rows) {
                     if (err) {
                         reject(err)
                     } else {
+                        console.log(rows[0])
                         if (rows[0] && rows[0].apikey) {
                             if (!rows[0].apiid) {
                                 rows[0].apiid = id

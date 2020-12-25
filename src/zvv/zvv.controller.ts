@@ -22,7 +22,7 @@ const stationLimit = (id: string): string => {
         case '8505000': //Luzern
             return '200'
         default:
-            return '10'
+            return '100'
     }
 }
 
@@ -32,12 +32,12 @@ const sanitizeLine = (line: string): string => {
     return line
         .replace(/S( )+/, 'S')
         .replace(/SN( )+/, 'SN')
-        .replace(/IC( )+/, 'IC')
+        .replace(/IC( )+.*/, 'IC')
         .replace(/IR( )+.*/, 'IR')
-        .replace('Tro( )+', '')
-        .replace('Trm( )+', '')
-        .replace('Bus +', '')
-        .replace(' +', ' ')
+        .replace(/Tro( )+/, '')
+        .replace(/Trm( )+/, '')
+        .replace(/Bus +/, '')
+        .replace(/ +/, ' ')
 }
 
 const getDateTime = (input: { date: string; time: string }): Moment | null => {
@@ -88,7 +88,7 @@ export class ZvvController {
                 ? connection.locations[connection.locations.length - 1]
                 : null
         const scheduled = getFormattedDateTime(mainLocation)
-        const realtime = getFormattedDateTime(mainLocation.realTime)
+        const realtime = getFormattedDateTime(mainLocation.realTime) || null
         return {
             departure: {
                 scheduled,
@@ -99,7 +99,7 @@ export class ZvvController {
                 realtime: getFormattedDateTime(lastLocation.realTime) || undefined,
             },
             type: mapType(product.icon),
-            name: sanitizeLine(product.line || product.name),
+            name: sanitizeLine(product.name),
             dt: realtime || scheduled,
             colors: { fg: '#' + product.color?.fg, bg: '#' + product.color?.bg },
             source: 'zvv',

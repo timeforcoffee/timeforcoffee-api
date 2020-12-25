@@ -67,6 +67,20 @@ function mapStationName(station: string) {
             return station
     }
 }
+
+function sanitizeName(line_name: string): string {
+    if (line_name.startsWith('S')) {
+        return 'S' + line_name.substr(1)
+    }
+    if (line_name.startsWith('IC')) {
+        return 'IC'
+    }
+    if (line_name.startsWith('IR')) {
+        return 'IR'
+    }
+    return line_name
+}
+
 @Injectable()
 export class WmlService {
     private readonly logger = new Logger(WmlService.name)
@@ -92,7 +106,7 @@ export class WmlService {
                 const scheduled = getTimeFormatted(departure.iso8601_time_sec)
                 const realtime = getTimeFormatted(departure.iso8601_real_time_sec)
                 return {
-                    name: product.line_name,
+                    name: sanitizeName(product.line_name),
                     type: mapCategory(product.transportMapping || product.agency?.id),
                     accessible: null,
                     colors: { fg: hexy(product.colors?.fg), bg: hexy(product.colors?.bg) },

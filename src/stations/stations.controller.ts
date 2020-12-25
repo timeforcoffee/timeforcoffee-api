@@ -1,15 +1,17 @@
 import { Controller, Get, Param } from '@nestjs/common'
 import axios from 'axios'
+import { HelpersService } from '../helpers/helpers.service'
 
 const stationURL =
     'http://online.fahrplan.zvv.ch/bin/ajax-getstop.exe/dny?start=1&tpl=suggest2json&REQ0JourneyStopsS0A=7&getstop=1&noSession=yes&REQ0JourneyStopsB=25&REQ0JourneyStopsS0G='
 
 @Controller('/')
 export class StationsController {
+    constructor(private helpersService: HelpersService) {}
     @Get('api/ch/stations/:name')
     async findStation(@Param('name') name: string) {
-        const response = await axios.get(`${stationURL}${name})`)
-        const json = (response.data as string)
+        const response = await this.helpersService.callApi(`${stationURL}${name.replace(' ', '+')}`)
+        const json = (response as string)
             .replace(';SLs.showSuggestion();', '')
             .replace('SLs.sls=', '')
         const data = JSON.parse(json)

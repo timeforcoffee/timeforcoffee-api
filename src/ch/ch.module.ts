@@ -4,9 +4,11 @@ import { ZvvModule } from '../zvv/zvv.module'
 import { DbModule } from '../db/db.module'
 import { OstModule } from '../ost/ost.module'
 import { BltModule } from '../blt/blt.module'
+import { HelpersModule } from '../helpers/helpers.module'
+import { OpendataModule } from '../opendata/opendata.module'
 
 @Module({
     controllers: [ChController],
-    imports: [ZvvModule, OstModule, BltModule, DbModule],
+    imports: [ZvvModule, OstModule, BltModule, OpendataModule, DbModule, HelpersModule],
 })
 export class ChModule {}
