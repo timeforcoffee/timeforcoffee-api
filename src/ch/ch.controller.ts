@@ -11,7 +11,7 @@ import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
-@Controller('/api/ch/')
+@Controller('')
 export class ChController {
     constructor(
         private zvvController: ZvvController,
@@ -22,11 +22,11 @@ export class ChController {
         private dbService: DbService,
         private helpersService: HelpersService,
     ) {}
-    @Get('stationboard/:id')
+
+    @Get('/api/ch/stationboard/:id')
     @Header('Cache-Control', 'public, max-age=19')
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         const api = await this.dbService.getApiKey(id)
-        console.log(api)
         switch (api.apikey) {
             case 'ost':
                 return this.combine(id, this.ostController.stationboard(api.apiid))
@@ -93,8 +93,8 @@ export class ChController {
                 }
                 if (
                     otherDept.colors &&
-                    dept.colors.fg === '#000000' &&
-                    dept.colors.bg.toLowerCase() === '#ffffff'
+                    dept.colors.fg === '#000' &&
+                    dept.colors.bg.toLowerCase() === '#fff'
                 ) {
                     dept.colors = otherDept.colors
                     dept.source += ', colors: ' + otherDept.source
@@ -112,7 +112,8 @@ export class ChController {
 
         return zvv
     }
-    @Get('connections/:from/:to/:datetime/:arrivaldatetime')
+
+    @Get('/api/ch/connections/:from/:to/:datetime/:arrivaldatetime')
     @Header('Cache-Control', 'public, max-age=60')
     async connectionsWithArrival(
         @Param('from') from: string,
@@ -120,14 +121,14 @@ export class ChController {
         @Param('datetime') datetime: string,
         @Param('arrivaldatetime') arrivaldatetime: string | null,
     ) {
-        const datetimeObj = moment.tz(datetime, 'YYYY-MM-DDThh:mm', 'Europe/Zurich')
+        const datetimeObj = moment.tz(datetime, 'YYYY-MM-DDTHH:mm', 'Europe/Zurich')
         const datetimeArrivalObj = arrivaldatetime
-            ? moment.tz(arrivaldatetime, 'YYYY-MM-DDThh:mm', 'Europe/Zurich')
+            ? moment.tz(arrivaldatetime, 'YYYY-MM-DDTHH:mm', 'Europe/Zurich')
             : null
 
         const datetimeMinus10 = datetimeObj.clone().subtract('10', 'minutes')
         const date = datetimeMinus10.format('YYYY-MM-DD')
-        const time = datetimeMinus10.format('hh:mm')
+        const time = datetimeMinus10.format('HH:mm')
         const url = `${connectionsBaseUrl}&from=${from}&to=${to}&date=${date}&time=${time}`
 
         const data = await this.helpersService.callApi(url)
@@ -138,7 +139,7 @@ export class ChController {
         return this.extractData(data, from, to, datetimeObj, datetimeArrivalObj)
     }
 
-    @Get('connections/:from/:to/:datetime')
+    @Get('/api/ch/connections/:from/:to/:datetime')
     @Header('Cache-Control', 'public, max-age=60')
     async connections(
         @Param('from') from: string,
@@ -192,5 +193,13 @@ export class ChController {
             return this.extractData(data, from, to, datetimeObj, null)
         }
         return result
+    }
+
+    @Get('/api/:api/stationboard/:id/:starttime')
+    async stationboardStarttime(
+        @Param('id') id: string,
+        @Param('starttime') starttime: string,
+    ): Promise<DeparturesType | DeparturesError> {
+        return this.zvvController.stationboardStarttime(id, starttime)
     }
 }

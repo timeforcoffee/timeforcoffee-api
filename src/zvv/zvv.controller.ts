@@ -127,6 +127,31 @@ export class ZvvController {
         }
     }
 
+    @Get('stationboard/:id/:starttime')
+    async stationboardStarttime(
+        @Param('id') id: string,
+        @Param('starttime') starttime: string,
+    ): Promise<DeparturesType | DeparturesError> {
+        id = stripId(id)
+        const datetimeObj = moment.tz(starttime, 'YYYY-MM-DDTHH:mm', 'Europe/Zurich')
+
+        const url = `${stationBaseUrl}${id}&maxJourneys=${stationLimit(
+            id,
+        )}&date=${datetimeObj.format('DD.MM.YY')}&time=${datetimeObj.format('HH:mm')}`
+
+        const data = await this.helpersService.callApi(url)
+        if (data.error) {
+            return data
+        }
+        if (!data.station || !data.connections) {
+            return { error: 'Wrong data format from data provider' }
+        }
+        return {
+            meta: { station_id: id, station_name: AllHtmlEntities.decode(data.station.name) },
+            departures: await this.getConnections(data.connections as any[]),
+        }
+    }
+
     private async getConnections(data: any[]) {
         const departures: DepartureType[] = []
         for (let i = 0; i < data.length; i++) {

@@ -58,7 +58,7 @@ export class DbService {
                                     rows[0].apiid = id
                                 }
                                 resolve(rows[0])
-                            } else if (rows[0].county !== 'Zürich') {
+                            } else if (rows[0].county !== 'Zürich' && rows[0].county !== 'Zurich') {
                                 // if not from Zürich, also call search
                                 resolve({ apikey: 'search', apiid: idN.toString() })
                             } else {
