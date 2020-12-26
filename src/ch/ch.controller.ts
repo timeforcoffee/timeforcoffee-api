@@ -35,6 +35,7 @@ export class ChController {
             case 'odp':
             case 'vbl':
             case 'bvb':
+            case 'gva':
             case 'search':
                 return this.combine(id, this.searchController.stationboard(id))
             default:
