@@ -1,10 +1,10 @@
-import { Controller, Get, Param } from '@nestjs/common'
+import { Controller, Get, Header, Param } from '@nestjs/common'
 import { ZvvController } from '../zvv/zvv.controller'
 import { DbService } from '../db/db.service'
 import { DeparturesError, DeparturesType, DepartureType } from './ch.type'
 import { OstController } from '../ost/ost.controller'
 import { BltController } from '../blt/blt.controller'
-import * as moment from 'moment-timezone'
+import moment from 'moment-timezone'
 import { stripId } from './ch.service'
 import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
@@ -23,6 +23,7 @@ export class ChController {
         private helpersService: HelpersService,
     ) {}
     @Get('stationboard/:id')
+    @Header('Cache-Control', 'public, max-age=19')
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         const api = await this.dbService.getApiKey(id)
         console.log(api)
@@ -34,6 +35,7 @@ export class ChController {
             case 'odp':
             case 'vbl':
             case 'bvb':
+            case 'search':
                 return this.combine(id, this.searchController.stationboard(id))
             default:
                 return this.zvvController.stationboard(id)
@@ -111,15 +113,16 @@ export class ChController {
         return zvv
     }
     @Get('connections/:from/:to/:datetime/:arrivaldatetime')
+    @Header('Cache-Control', 'public, max-age=60')
     async connectionsWithArrival(
         @Param('from') from: string,
         @Param('to') to: string,
         @Param('datetime') datetime: string,
         @Param('arrivaldatetime') arrivaldatetime: string | null,
     ) {
-        const datetimeObj = moment(datetime, 'YYYY-MM-DDThh:mm', 'Europe/Zurich')
+        const datetimeObj = moment.tz(datetime, 'YYYY-MM-DDThh:mm', 'Europe/Zurich')
         const datetimeArrivalObj = arrivaldatetime
-            ? moment(arrivaldatetime, 'YYYY-MM-DDThh:mm', 'Europe/Zurich')
+            ? moment.tz(arrivaldatetime, 'YYYY-MM-DDThh:mm', 'Europe/Zurich')
             : null
 
         const datetimeMinus10 = datetimeObj.clone().subtract('10', 'minutes')
@@ -136,6 +139,7 @@ export class ChController {
     }
 
     @Get('connections/:from/:to/:datetime')
+    @Header('Cache-Control', 'public, max-age=60')
     async connections(
         @Param('from') from: string,
         @Param('to') to: string,
@@ -153,11 +157,11 @@ export class ChController {
                     })
                     if (datetimeArrivalObj) {
                         return (
-                            firstRealSection.departure.departureTimestamp === datetimeObj.unix() &&
-                            firstRealSection.arrival.arrivalTimestamp === datetimeArrivalObj.unix()
+                            firstRealSection.departure?.departureTimestamp === datetimeObj.unix() &&
+                            firstRealSection.arrival?.arrivalTimestamp === datetimeArrivalObj.unix()
                         )
                     }
-                    return firstRealSection.departure.departureTimestamp === datetimeObj.unix()
+                    return firstRealSection.departure?.departureTimestamp === datetimeObj.unix()
                 })
                 .map(connection => {
                     const firstRealSection = connection.sections.find(section => {

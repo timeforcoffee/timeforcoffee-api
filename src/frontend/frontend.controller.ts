@@ -18,6 +18,6 @@ export class FrontendController {
             path += 'index.html'
         }
         // change the path to the correct html page path in your project
-        res.sendFile(join(process.cwd(), './frontend' + path))
+        res.sendFile(join(process.cwd(), './www' + path))
     }
 }

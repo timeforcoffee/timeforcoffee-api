@@ -1,9 +1,8 @@
 import { Controller, Get, Logger, Param } from '@nestjs/common'
 import { HelpersService } from '../helpers/helpers.service'
-import { DeparturesError, DeparturesType, DepartureType } from '../ch/ch.type'
+import { DeparturesType, DepartureType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
-import * as moment from 'moment-timezone'
-import { Moment } from 'moment-timezone'
+import moment, { Moment } from 'moment-timezone'
 
 const stationBaseUrl = 'https://timetable.search.ch/api/stationboard?show_delays=1&stop='
 
@@ -16,7 +15,7 @@ function colorConvert(color: string): string {
 
 function getColors(color: string) {
     const colors = color.split('~')
-    if (colors.length < 2) {
+    if (colors.length < 2 || !colors[0]) {
         return { bg: '#ffffff', fg: '#000000' }
     }
 
@@ -28,14 +27,14 @@ function getTimeFormatted(departure?: string): string | null {
     if (!departure) {
         return null
     }
-    return moment(departure, TIME_FORMAT, 'Europe/Zurich').format(OUTPUT_DATE_FORMAT)
+    return moment.tz(departure, TIME_FORMAT, 'Europe/Zurich').format(OUTPUT_DATE_FORMAT)
 }
 
 function getTime(time?: string): Moment {
     if (!time) {
         return null
     }
-    return moment(time, TIME_FORMAT, 'Europe/Zurich')
+    return moment.tz(time, TIME_FORMAT, 'Europe/Zurich')
 }
 
 @Controller('api/search/')
@@ -51,7 +50,7 @@ export class SearchController {
             return data
         }
 
-        const foo: DeparturesType = {
+        return {
             meta: { station_id: id, station_name: data.stop.name },
             departures: data.connections.map(
                 (connection): DepartureType => {
@@ -64,7 +63,7 @@ export class SearchController {
                     return {
                         id: connection.terminal.id,
                         type: connection.type,
-                        colors: getColors(connection.color),
+                        colors: connection.type === 'strain' ? null : getColors(connection.color),
                         departure: { scheduled, realtime },
                         dt: scheduled || realtime,
                         arrival: { scheduled: null },
@@ -77,7 +76,5 @@ export class SearchController {
                 },
             ),
         }
-
-        return foo
     }
 }

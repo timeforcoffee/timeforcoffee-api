@@ -8,7 +8,7 @@ export class DepartureType {
     id: string
     to: string
     colors: { fg: string; bg: string }
-    platform: string
+    platform: string | null
     type: string
 }
 

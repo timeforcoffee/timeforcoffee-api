@@ -5,11 +5,15 @@
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true
-  }
+    "incremental": true,
+    "allowSyntheticDefaultImports": true,
+    ///"resolveJsonModule": true,
+    "esModuleInterop": true,
+    // temporarly enable this (2020-06-20), @apollo/gateway with version 0.16 hat some compilation problems
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "dist"]
 }

@@ -1,7 +1,6 @@
 import { Controller, Get, Logger, Param } from '@nestjs/common'
-import axios from 'axios'
 import { AllHtmlEntities } from 'html-entities'
-import * as moment from 'moment-timezone'
+import moment from 'moment-timezone'
 import { Moment } from 'moment-timezone'
 import { DbService } from '../db/db.service'
 import { DeparturesError, DeparturesType, DepartureType } from '../ch/ch.type'
@@ -42,7 +41,7 @@ const sanitizeLine = (line: string): string => {
 
 const getDateTime = (input: { date: string; time: string }): Moment | null => {
     if (input && input.date && input.time) {
-        return moment(input.date + ' ' + input.time, 'DD.MM.YYYY HH:mm', 'Europe/Zurich')
+        return moment.tz(input.date + ' ' + input.time, 'DD.MM.YYYY HH:mm', 'Europe/Zurich')
     }
     return null
 }
@@ -105,7 +104,7 @@ export class ZvvController {
             source: 'zvv',
             id: await this.dbService.zvvToSbbId(lastLocation.location?.id),
             accessible: hasAccessible(connection.attributes_bfr?.[0]?.code) || false,
-            platform: mainLocation.platform || '',
+            platform: mainLocation.platform || null,
             to: AllHtmlEntities.decode(product.direction),
         }
     }

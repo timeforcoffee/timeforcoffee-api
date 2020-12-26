@@ -1,5 +1,5 @@
 import { Controller, Get, Logger, Param } from '@nestjs/common'
-import * as moment from 'moment-timezone'
+import moment from 'moment-timezone'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import { HelpersService } from '../helpers/helpers.service'
 import { DeparturesType, DepartureType } from '../ch/ch.type'
@@ -12,7 +12,7 @@ function getTimeFormatted(departure?: string): string | null {
     if (!departure) {
         return null
     }
-    return moment(departure, ODP_TIME_FORMAT, 'Europe/Zurich').format(OUTPUT_DATE_FORMAT)
+    return moment.tz(departure, ODP_TIME_FORMAT, 'Europe/Zurich').format(OUTPUT_DATE_FORMAT)
 }
 
 function mapType(category: string): string {
@@ -43,8 +43,6 @@ function mapNumber(category: string, number: string): string {
 
 @Controller('/api/odp/')
 export class OpendataController {
-    private readonly logger = new Logger(OpendataController.name)
-
     constructor(private helpersService: HelpersService) {}
     @Get('stationboard/:id')
     async stationboard(@Param('id') id: string): Promise<DeparturesType> {

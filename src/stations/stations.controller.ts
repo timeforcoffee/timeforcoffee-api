@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common'
+import { Controller, Get, Header, Param } from '@nestjs/common'
 import { HelpersService } from '../helpers/helpers.service'
 
 const stationURL =
@@ -8,6 +8,7 @@ const stationURL =
 export class StationsController {
     constructor(private helpersService: HelpersService) {}
     @Get('api/:api/stations/:name')
+    @Header('Cache-Control', 'public, max-age=3600')
     async findStation(@Param('name') name: string) {
         const response = await this.helpersService.callApi(`${stationURL}${name.replace(' ', '+')}`)
         if (response.error) {

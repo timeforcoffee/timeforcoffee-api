@@ -1,9 +1,8 @@
 import { Injectable, Logger, Param } from '@nestjs/common'
 import { DeparturesType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
-import * as moment from 'moment-timezone'
-import axios from 'axios'
-import * as luhn from 'luhn-generator'
+import moment from 'moment-timezone'
+import luhn from 'luhn-generator'
 import { HelpersService } from '../helpers/helpers.service'
 
 function formatName(data: any): string {
@@ -50,7 +49,7 @@ function getTimeFormatted(departure?: string): string | null {
     if (!departure) {
         return null
     }
-    return moment(departure, WML_TIME_FORMAT, 'Europe/Zurich').format(OUTPUT_DATE_FORMAT)
+    return moment.tz(departure, WML_TIME_FORMAT, 'Europe/Zurich').format(OUTPUT_DATE_FORMAT)
 }
 
 function mapStationName(station: string) {
@@ -90,7 +89,7 @@ export class WmlService {
         id = stripId(id)
         let shortId = id.substr(2)
         shortId += '-' + luhn.checksum(shortId)
-        const now = moment()
+        const now = moment.tz()
         const url = `${urlPre}${shortId}/${now.format(WML_TIME_FORMAT)}/${now
             .add(2, 'hours')
             .format(WML_TIME_FORMAT)}`
@@ -112,7 +111,7 @@ export class WmlService {
                     colors: { fg: hexy(product.colors?.fg), bg: hexy(product.colors?.bg) },
                     to: mapStationName(formatName(departure.end_station)),
                     source: 'wml',
-                    platform: departure.platform || '',
+                    platform: departure.platform || null,
                     departure: {
                         scheduled: getTimeFormatted(departure.iso8601_time_sec),
                         realtime: departure.real_time
