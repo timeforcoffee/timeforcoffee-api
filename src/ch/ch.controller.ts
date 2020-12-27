@@ -25,8 +25,8 @@ export class ChController {
     ) {}
 
     @Get('/api/ch/stationboard/:id')
-    @Cache({ ttl: 29 })
     @Header('Cache-Control', 'public, max-age=29')
+    @Cache({ ttl: 29 })
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         const api = await this.dbService.getApiKey(id)
         switch (api.apikey) {
@@ -201,6 +201,7 @@ export class ChController {
     }
 
     @Get('/api/:api/stationboard/:id/:starttime')
+    @Header('Cache-Control', 'public, max-age=60')
     @Cache({ ttl: 60 })
     async stationboardStarttime(
         @Param('id') id: string,
