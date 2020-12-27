@@ -10,6 +10,7 @@ import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
+import { Cache } from '../helpers/helpers.cache'
 
 @Controller('')
 export class ChController {
@@ -24,6 +25,7 @@ export class ChController {
     ) {}
 
     @Get('/api/ch/stationboard/:id')
+    @Cache({ ttl: 19 })
     @Header('Cache-Control', 'public, max-age=19')
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         const api = await this.dbService.getApiKey(id)
@@ -94,8 +96,8 @@ export class ChController {
                 }
                 if (
                     otherDept.colors &&
-                    dept.colors.fg === '#000' &&
-                    dept.colors.bg.toLowerCase() === '#fff'
+                    dept.colors.fg === '#000000' &&
+                    dept.colors.bg.toLowerCase() === '#ffffff'
                 ) {
                     dept.colors = otherDept.colors
                     dept.source += ', colors: ' + otherDept.source
@@ -116,6 +118,7 @@ export class ChController {
 
     @Get('/api/ch/connections/:from/:to/:datetime/:arrivaldatetime')
     @Header('Cache-Control', 'public, max-age=60')
+    @Cache({ ttl: 60 })
     async connectionsWithArrival(
         @Param('from') from: string,
         @Param('to') to: string,
@@ -142,6 +145,7 @@ export class ChController {
 
     @Get('/api/ch/connections/:from/:to/:datetime')
     @Header('Cache-Control', 'public, max-age=60')
+    @Cache({ ttl: 20 })
     async connections(
         @Param('from') from: string,
         @Param('to') to: string,
@@ -197,6 +201,7 @@ export class ChController {
     }
 
     @Get('/api/:api/stationboard/:id/:starttime')
+    @Cache({ ttl: 60 })
     async stationboardStarttime(
         @Param('id') id: string,
         @Param('starttime') starttime: string,

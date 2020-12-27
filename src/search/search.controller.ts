@@ -15,7 +15,8 @@ function colorConvert(color: string): string {
 
 function getColors(color: string) {
     const colors = color.split('~')
-    if (colors.length < 2 || !colors[0]) {
+
+    if (colors.length < 2 || colors[0].length === 0) {
         return { bg: '#ffffff', fg: '#000000' }
     }
 
