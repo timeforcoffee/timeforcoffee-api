@@ -15,7 +15,7 @@ export class HelpersService {
             return response.data
         } catch (e) {
             this.logger.warn(`${url} threw an error, ${e.message}`)
-            return { error: e.message }
+            return { error: e.message, source: url }
         }
     }
 }

@@ -51,33 +51,36 @@ export class SearchController {
             return data
         }
         if (!data.stop) {
-            return { error: `Station ${id} not found in backend` }
+            return { error: `Station ${id} not found in backend`, source: url }
         }
         return {
             meta: { station_id: id, station_name: data.stop.name },
-            departures: data.connections.map(
-                (connection): DepartureType => {
-                    const scheduled = getTimeFormatted(connection.time)
-                    const realtime = connection.dep_delay
-                        ? getTime(connection.time)
-                              ?.add(connection.dep_delay, 'minutes')
-                              .format(OUTPUT_DATE_FORMAT)
-                        : null
-                    return {
-                        id: connection.terminal.id,
-                        type: connection.type,
-                        colors: connection.type === 'strain' ? null : getColors(connection.color),
-                        departure: { scheduled, realtime },
-                        dt: scheduled || realtime,
-                        arrival: { scheduled: null },
-                        accessible: null,
-                        source: 'search',
-                        platform: null,
-                        name: connection.line,
-                        to: connection.terminal.name,
-                    }
-                },
-            ),
+            departures: data.connections
+                ? data.connections.map(
+                      (connection): DepartureType => {
+                          const scheduled = getTimeFormatted(connection.time)
+                          const realtime = connection.dep_delay
+                              ? getTime(connection.time)
+                                    ?.add(connection.dep_delay, 'minutes')
+                                    .format(OUTPUT_DATE_FORMAT)
+                              : null
+                          return {
+                              id: connection.terminal.id,
+                              type: connection.type,
+                              colors:
+                                  connection.type === 'strain' ? null : getColors(connection.color),
+                              departure: { scheduled, realtime },
+                              dt: scheduled || realtime,
+                              arrival: { scheduled: null },
+                              accessible: null,
+                              source: 'search',
+                              platform: null,
+                              name: connection.line,
+                              to: connection.terminal.name,
+                          }
+                      },
+                  )
+                : [],
         }
     }
 }

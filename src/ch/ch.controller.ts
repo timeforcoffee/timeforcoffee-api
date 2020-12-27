@@ -40,15 +40,15 @@ export class ChController {
         const api = await this.dbService.getApiKey(id)
         switch (api.apikey) {
             case 'ost':
-                return this.combine(id, this.ostController.stationboard(api.apiid))
+                return this.combine(id, this.ostController.stationboard(api.apiid), api.apikey)
             case 'blt':
-                return this.combine(id, this.bltController.stationboard(api.apiid))
+                return this.combine(id, this.bltController.stationboard(api.apiid), api.apikey)
             case 'odp':
             case 'vbl':
             case 'bvb':
             case 'gva':
             case 'search':
-                return this.combine(id, this.searchController.stationboard(id))
+                return this.combine(id, this.searchController.stationboard(id), api.apikey)
             default:
                 return this.zvvController.stationboard(id)
         }
@@ -57,16 +57,17 @@ export class ChController {
     async combine(
         id: string,
         stationboardPromise: Promise<DeparturesType>,
+        apikey: string,
     ): Promise<DeparturesType | DeparturesError> {
         const responses: (DeparturesType | DeparturesError)[] = await Promise.all([
             this.zvvController.stationboard(id).catch(
                 (e): DeparturesError => {
-                    return { error: e.message }
+                    return { error: e.message, source: 'zvv' }
                 },
             ),
             stationboardPromise.catch(
                 (e): DeparturesError => {
-                    return { error: e.message }
+                    return { error: e.message, source: apikey }
                 },
             ),
         ])

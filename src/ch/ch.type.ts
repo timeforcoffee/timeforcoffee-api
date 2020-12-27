@@ -25,4 +25,5 @@ export class DeparturesType {
 
 export class DeparturesError {
     error: string
+    source?: string
 }
