@@ -10,7 +10,7 @@ import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
-import { Cache } from '../helpers/helpers.cache'
+import { Cache, delay } from '../helpers/helpers.cache'
 
 @Controller('')
 export class ChController {
@@ -33,6 +33,7 @@ export class ChController {
         if ('error' in data) {
             this.logger.error(`${id} returned errror: ${data.error}`)
         }
+
         return data
     }
 
