@@ -121,8 +121,12 @@ export class ZvvController {
         if (!data.station || !data.connections) {
             return { error: 'Wrong data format from data provider' }
         }
+        if (data.station.name === '') {
+            return { error: `Station ${id} not found in backend` }
+        }
+
         return {
-            meta: { station_id: id, station_name: AllHtmlEntities.decode(data.station.name) },
+            meta: { station_id: id, station_name: AllHtmlEntities.decode(data.station?.name) },
             departures: await this.getConnections(data.connections as any[]),
         }
     }

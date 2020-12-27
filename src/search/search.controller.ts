@@ -50,7 +50,9 @@ export class SearchController {
         if (data.error) {
             return data
         }
-
+        if (!data.stop) {
+            return { error: `Station ${id} not found in backend` }
+        }
         return {
             meta: { station_id: id, station_name: data.stop.name },
             departures: data.connections.map(
