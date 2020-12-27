@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Param } from '@nestjs/common'
+import { Controller, Get, Header, Logger, Param } from '@nestjs/common'
 import { ZvvController } from '../zvv/zvv.controller'
 import { DbService } from '../db/db.service'
 import { DeparturesError, DeparturesType, DepartureType } from './ch.type'
@@ -23,11 +23,20 @@ export class ChController {
         private dbService: DbService,
         private helpersService: HelpersService,
     ) {}
+    private readonly logger = new Logger(ChController.name)
 
     @Get('/api/ch/stationboard/:id')
     @Header('Cache-Control', 'public, max-age=29')
     @Cache({ ttl: 29 })
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
+        const data = await this.getData(id)
+        if ('error' in data) {
+            this.logger.error(`${id} returned errror: ${data.error}`)
+        }
+        return data
+    }
+
+    async getData(id: string): Promise<DeparturesType | DeparturesError> {
         const api = await this.dbService.getApiKey(id)
         switch (api.apikey) {
             case 'ost':
