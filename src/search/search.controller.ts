@@ -1,10 +1,10 @@
 import { Controller, Get, Logger, Param } from '@nestjs/common'
 import { HelpersService } from '../helpers/helpers.service'
-import { DeparturesType, DepartureType } from '../ch/ch.type'
+import { DepartureType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import moment, { Moment } from 'moment-timezone'
 
-const stationBaseUrl = 'https://timetable.search.ch/api/stationboard?show_delays=1&stop='
+const stationBaseUrl = 'https://timetable.search.ch/api/stationboard?show_delays=1&limit=100&stop='
 
 function colorConvert(color: string): string {
     if (color.length === 3) {
