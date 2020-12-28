@@ -1,6 +1,7 @@
 import cacheManager from 'cache-manager'
 import redisStore from 'cache-manager-ioredis'
 import * as dotenv from 'dotenv'
+import redis from 'redis'
 
 interface TTLFunction {
     (): number
@@ -14,12 +15,18 @@ interface CacheArgs {
 dotenv.config()
 
 const memoryStore = cacheManager.caching({ store: 'memory', max: 300, ttl: 10 })
+const redisHost = process.env.REDIS_HOST || 'redis-service.tfc'
+const storeType = 'redis'
+const redisPort = parseInt(process.env.REDIS_PORT) || 6379
 const clusterStore = cacheManager.caching({
     store: redisStore,
-    host: process.env.REDIS_HOST || 'redis-service.tfc',
-    port: process.env.REDIS_PORT || 6379,
+    host: redisHost,
+    port: redisPort,
     ttl: 10,
 })
+const redisClient = redis.createClient(redisPort, redisHost)
+redisClient.on('error', e => console.log(e))
+
 // currently we can't store everything in redis, we need need two redis instances
 // small stuff like rokka images can be stored in redis nevertheless for now
 // the whole `cluster` thing can be removed, once we have a better/bigger redis for caching
@@ -29,7 +36,7 @@ export function delay(ms) {
 }
 
 export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
-    const cacheStore = clusterStore
+    const cacheStore = storeType === 'redis' ? clusterStore : memoryStore
     return (target: Record<string, any>, propertyKey: string, descriptor: PropertyDescriptor) => {
         if (!key) {
             key = `${target.constructor.name}/${propertyKey.toString()}`
@@ -66,13 +73,36 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                         // couldn't decompress, just continue
                     }
                 }
+                const cachingKey = '__caching__' + argsKey
+                // make sure, we lock it when using redis with a locking key
+                if (storeType === 'redis') {
+                    const alreadyCaching = !(await new Promise<boolean>((resolve, reject) => {
+                        redisClient.setnx(cachingKey, 'a', (err, res) => {
+                            if (err) {
+                                resolve(false)
+                            }
+                            if (res === 1) {
+                                resolve(true)
+                            }
+                            resolve(false)
+                        })
+                        redisClient.expire(cachingKey, 10)
+                    }))
+                    if (alreadyCaching) {
+                        await delay(100)
+                        return callFunc({ args, retry: retry + 1, t })
+                    }
+                }
                 await cacheStore.set(argsKey, '__caching__', { ttl: 10 })
 
                 const result = await method.apply(t, args)
                 const calcTtl = typeof ttl === 'function' ? ttl() : ttl
                 const toStoreValue = JSON.stringify(result)
 
-                cacheStore.set(argsKey, toStoreValue, { ttl: calcTtl })
+                await cacheStore.set(argsKey, toStoreValue, { ttl: calcTtl })
+                if (storeType === 'redis') {
+                    redisClient.del(cachingKey)
+                }
 
                 return result
             }

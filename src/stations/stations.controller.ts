@@ -10,7 +10,7 @@ export class StationsController {
     constructor(private helpersService: HelpersService) {}
     @Get('api/:api/stations/:name')
     @Header('Cache-Control', 'public, max-age=3600')
-    @Cache({ ttl: 600 })
+    @Cache({ ttl: 86400 })
     async findStation(@Param('name') name: string) {
         const response = await this.helpersService.callApi(`${stationURL}${name.replace(' ', '+')}`)
         if (response.error) {
