@@ -1,4 +1,7 @@
 import cacheManager from 'cache-manager'
+import redisStore from 'cache-manager-ioredis'
+import * as dotenv from 'dotenv'
+
 interface TTLFunction {
     (): number
 }
@@ -8,9 +11,15 @@ interface CacheArgs {
     ttl?: number | TTLFunction
     cluster?: boolean
 }
+dotenv.config()
 
 const memoryStore = cacheManager.caching({ store: 'memory', max: 300, ttl: 10 })
-
+const clusterStore = cacheManager.caching({
+    store: redisStore,
+    host: process.env.REDIS_HOST || 'redis-service.tfc',
+    port: process.env.REDIS_PORT || 6379,
+    ttl: 10,
+})
 // currently we can't store everything in redis, we need need two redis instances
 // small stuff like rokka images can be stored in redis nevertheless for now
 // the whole `cluster` thing can be removed, once we have a better/bigger redis for caching
@@ -20,7 +29,7 @@ export function delay(ms) {
 }
 
 export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
-    const cacheStore = memoryStore
+    const cacheStore = clusterStore
     return (target: Record<string, any>, propertyKey: string, descriptor: PropertyDescriptor) => {
         if (!key) {
             key = `${target.constructor.name}/${propertyKey.toString()}`
