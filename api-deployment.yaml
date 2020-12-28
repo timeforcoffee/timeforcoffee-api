@@ -9,7 +9,7 @@ metadata:
   name: tfc-api
   namespace: tfc
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: tfc-api
@@ -21,24 +21,6 @@ spec:
         app: tfc-api
     spec:
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            preference:
-              matchExpressions:
-                - key: node-role.kubernetes.io/controlplane
-                  operator: DoesNotExist
-        podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values:
-                        - varnish
-                topologyKey: "kubernetes.io/hostname"
-              weight: 1
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - podAffinityTerm:
@@ -96,8 +78,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: tfc-api
-  minReplicas: 2
-  maxReplicas: 3
+  minReplicas: 3
+  maxReplicas: 4
   targetCPUUtilizationPercentage: 1000
 ---
 apiVersion: extensions/v1beta1
