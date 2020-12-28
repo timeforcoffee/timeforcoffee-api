@@ -15,7 +15,7 @@ ADD stations.sqlite* /home/node/tfc/dist/
 USER root
 RUN chown node /home/node/tfc/dist/*
 USER node
-RUN sqlite3 dist/stations.sqlite VACUUM
+RUN sqlite3 dist/stations.sqlite "VACUUM"
 ADD . /home/node/tfc
 RUN cp -r www dist/
 RUN ./node_modules/.bin/nest build

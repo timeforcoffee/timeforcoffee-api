@@ -45,7 +45,7 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                     await delay(100)
                     if (retry > 50) {
                         console.log('Took more than 100 retries... set to non caching currently')
-                        await cacheStore.set(argsKey, null)
+                        await cacheStore.del(argsKey)
                     } else {
                         return callFunc({ args, retry: retry + 1, t })
                     }

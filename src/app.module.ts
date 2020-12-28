@@ -27,11 +27,16 @@ export class AppLoggerMiddleware implements NestMiddleware {
         const { method, originalUrl: url } = request
         const userAgent = request.get('user-agent') || ''
 
+        const startTime = +new Date()
+
         response.on('close', () => {
             if (url !== '/') {
                 const { statusCode } = response
+                const curTime = new Date().getTime()
                 this.logger.log(
-                    `${method} ${url} ${statusCode} - ${userAgent.replace(/CFNetwork.*/, '')}`,
+                    `${method} ${url} ${statusCode} ${
+                        (curTime - startTime) / 1000
+                    } ${userAgent.replace(/CFNetwork.*/, '')}`,
                 )
             }
         })
