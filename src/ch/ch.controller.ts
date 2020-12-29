@@ -44,7 +44,7 @@ export class ChController {
     }
 
     @Cache({ ttl: 29 })
-    async stationboardCached(id: string) {
+    async stationboardCached(id: string): Promise<DeparturesType | DeparturesError> {
         const data = await this.getData(id)
         if ('error' in data) {
             this.logger.error(`${id} returned errror: ${data.error}`)

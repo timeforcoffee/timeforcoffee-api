@@ -63,7 +63,7 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                 if (cachedValue === '__caching__') {
                     await delay(100)
                     if (retry > 50) {
-                        console.log('Took more than 100 retries... set to non caching currently')
+                        console.log('Took more than 50 retries... set to non caching currently')
                         await cacheStore.del(argsKey)
                     } else {
                         return callFunc({ args, retry: retry + 1, t })
@@ -93,7 +93,17 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                     }))
                     if (alreadyCaching) {
                         await delay(100)
-                        return callFunc({ args, retry: retry + 1, t })
+                        if (retry > 50) {
+                            if (storeType === 'redis') {
+                                console.log(
+                                    'Took more than 50 retries... set to non caching currently',
+                                )
+
+                                redisClient.del(cachingKey)
+                            }
+                        } else {
+                            return callFunc({ args, retry: retry + 1, t })
+                        }
                     }
                 }
                 await cacheStore.set(argsKey, '__caching__', { ttl: 10 })
