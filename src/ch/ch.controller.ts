@@ -12,7 +12,7 @@ import { SearchController } from '../search/search.controller'
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 import { Cache } from '../helpers/helpers.cache'
 
-const NOTEXISTING_IDS = ['8595033']
+const NOTEXISTING_IDS = ['8595033', '8573851', '8591026', '82']
 @Controller('')
 export class ChController {
     constructor(
