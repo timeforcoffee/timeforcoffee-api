@@ -13,7 +13,7 @@ import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
 import { Cache } from '../helpers/helpers.cache'
 
-const NOTEXISTING_IDS = ['8595033', '8573851', '8591026', '82']
+const NOTEXISTING_IDS = ['8595033', '8573851', '8591026', '82', '8589565', '8594932', '8591055']
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
 @Controller('')
@@ -32,6 +32,8 @@ export class ChController {
     @Get('/api/ch/stationboard/:id')
     @Header('Cache-Control', 'public, max-age=29')
     async stationboard(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
+        id = stripId(id)
+
         // send 59s cache-control to non timeforcoffee clients, that's enough
         if (!req.header('user-agent').includes('offee')) {
             //coffee or Coffee
@@ -72,7 +74,7 @@ export class ChController {
             return {
                 meta: {
                     station_id: id,
-                    station_name: `Station '${api.name}' does not exist anymore`,
+                    station_name: `${api.name}. Station does not exist anymore`,
                 },
                 departures: [],
             }
@@ -125,7 +127,7 @@ export class ChController {
         if ('error' in response && response.code === 'NOTFOUND') {
             this.logger.warn(`${stationName} not found in backends`)
             return {
-                meta: { station_id: id, station_name: `Station '${stationName}' not found` },
+                meta: { station_id: id, station_name: `${stationName}. Station not found` },
                 departures: [],
             }
         }
