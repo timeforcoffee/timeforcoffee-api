@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Param } from '@nestjs/common'
+import { Controller, Get, Header, Logger, Param } from '@nestjs/common'
 import { AllHtmlEntities } from 'html-entities'
 import moment from 'moment-timezone'
 import { Moment } from 'moment-timezone'
@@ -6,6 +6,7 @@ import { DbService } from '../db/db.service'
 import { DeparturesError, DeparturesType, DepartureType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import { HelpersService } from '../helpers/helpers.service'
+import { Cache } from '../helpers/helpers.cache'
 
 const stationBaseUrl =
     'http://online.fahrplan.zvv.ch/bin/stboard.exe/dny?dirInput=&boardType=dep&start=1&tpl=stbResult2json&input='
@@ -109,6 +110,7 @@ export class ZvvController {
         }
     }
     @Get('stationboard/:id')
+    @Header('Cache-Control', 'public, max-age=29')
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
         const url = `${stationBaseUrl}${id}&maxJourneys=${stationLimit(id)}`
@@ -132,6 +134,8 @@ export class ZvvController {
     }
 
     @Get('stationboard/:id/:starttime')
+    @Header('Cache-Control', 'public, max-age=59')
+    @Cache({ ttl: 59 })
     async stationboardStarttime(
         @Param('id') id: string,
         @Param('starttime') starttime: string,

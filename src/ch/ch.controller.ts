@@ -262,8 +262,8 @@ export class ChController {
     }
 
     @Get('/api/:api/stationboard/:id/:starttime')
-    @Header('Cache-Control', 'public, max-age=60')
-    @Cache({ ttl: 60 })
+    @Header('Cache-Control', 'public, max-age=59')
+    @Cache({ ttl: 59 })
     async stationboardStarttime(
         @Param('id') id: string,
         @Param('starttime') starttime: string,
