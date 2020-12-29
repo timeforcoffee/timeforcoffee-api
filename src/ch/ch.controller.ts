@@ -1,4 +1,6 @@
-import { Controller, Get, Header, Logger, Param } from '@nestjs/common'
+import { Controller, Get, Header, Logger, Param, Req, Res } from '@nestjs/common'
+import { Response, Request } from 'express'
+
 import { ZvvController } from '../zvv/zvv.controller'
 import { DbService } from '../db/db.service'
 import { DeparturesError, DeparturesType, DepartureType } from './ch.type'
@@ -9,10 +11,11 @@ import { stripId } from './ch.service'
 import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
-const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 import { Cache } from '../helpers/helpers.cache'
 
 const NOTEXISTING_IDS = ['8595033', '8573851', '8591026', '82']
+const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
+
 @Controller('')
 export class ChController {
     constructor(
@@ -28,13 +31,24 @@ export class ChController {
 
     @Get('/api/ch/stationboard/:id')
     @Header('Cache-Control', 'public, max-age=29')
+    async stationboard(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
+        // send 59s cache-control to non timeforcoffee clients, that's enough
+        if (!req.header('user-agent').includes('offee')) {
+            //coffee or Coffee
+            res.setHeader('Cache-Control', 'public, max-age=59')
+        }
+
+        const data = await this.stationboardCached(id)
+        //return data
+        res.send(data)
+    }
+
     @Cache({ ttl: 29 })
-    async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
+    async stationboardCached(id: string) {
         const data = await this.getData(id)
         if ('error' in data) {
             this.logger.error(`${id} returned errror: ${data.error}`)
         }
-
         return data
     }
 
