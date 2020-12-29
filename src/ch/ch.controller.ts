@@ -10,8 +10,9 @@ import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
-import { Cache, delay } from '../helpers/helpers.cache'
+import { Cache } from '../helpers/helpers.cache'
 
+const NOTEXISTING_IDS = ['8595033']
 @Controller('')
 export class ChController {
     constructor(
@@ -39,26 +40,62 @@ export class ChController {
 
     async getData(id: string): Promise<DeparturesType | DeparturesError> {
         const api = await this.dbService.getApiKey(id)
+        if (NOTEXISTING_IDS.includes(id)) {
+            return {
+                meta: {
+                    station_id: id,
+                    station_name: `Station '${api.name}' does not exist anymore`,
+                },
+                departures: [],
+            }
+        }
         switch (api.apikey) {
             case 'ost':
-                return this.combine(id, this.ostController.stationboard(api.apiid), api.apikey)
+                return this.combine(
+                    id,
+                    this.ostController.stationboard(api.apiid),
+                    api.apikey,
+                    api.name,
+                )
             case 'blt':
-                return this.combine(id, this.bltController.stationboard(api.apiid), api.apikey)
+                return this.combine(
+                    id,
+                    this.bltController.stationboard(api.apiid),
+                    api.apikey,
+                    api.name,
+                )
             case 'odp':
             case 'vbl':
             case 'bvb':
             case 'gva':
             case 'search':
-                return this.combine(id, this.searchController.stationboard(id), api.apikey)
+                return this.combine(
+                    id,
+                    this.searchController.stationboard(id),
+                    api.apikey,
+                    api.name,
+                )
             default:
-                return this.zvvController.stationboard(id)
+                return this.checkForError(await this.zvvController.stationboard(id), id, api.name)
         }
+    }
+
+    checkForError(response: DeparturesType | DeparturesError, id: string, stationName: string) {
+        if ('error' in response && response.code === 'NOTFOUND') {
+            this.logger.warn(`${stationName} not found in backends`)
+            return {
+                meta: { station_id: id, station_name: `Station '${stationName}' not found` },
+                departures: [],
+            }
+        }
+        return response
     }
 
     async combine(
         id: string,
         stationboardPromise: Promise<DeparturesType>,
         apikey: string,
+        stationName: string,
     ): Promise<DeparturesType | DeparturesError> {
         const responses: (DeparturesType | DeparturesError)[] = await Promise.all([
             this.zvvController.stationboard(id).catch(
@@ -74,10 +111,10 @@ export class ChController {
         ])
 
         if ('error' in responses[0] || !(responses[0].departures.length > 0)) {
-            return responses[1]
+            return this.checkForError(responses[1], id, stationName)
         }
         if ('error' in responses[1] || !(responses[1].departures.length > 0)) {
-            return responses[0]
+            return this.checkForError(responses[0], id, stationName)
         }
 
         const zvv = responses[0]

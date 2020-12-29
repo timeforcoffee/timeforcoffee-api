@@ -122,7 +122,7 @@ export class ZvvController {
             return { error: 'Wrong data format from data provider' }
         }
         if (data.station.name === '') {
-            return { error: `Station ${id} not found in backend` }
+            return { error: `Station ${id} not found in backend`, source: url, code: 'NOTFOUND' }
         }
 
         return {

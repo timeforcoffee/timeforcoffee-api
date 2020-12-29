@@ -51,7 +51,7 @@ export class SearchController {
             return data
         }
         if (!data.stop) {
-            return { error: `Station ${id} not found in backend`, source: url }
+            return { error: `Station ${id} not found in backend`, source: url, code: 'NOTFOUND' }
         }
         return {
             meta: { station_id: id, station_name: data.stop.name },

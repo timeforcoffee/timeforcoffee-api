@@ -36,7 +36,7 @@ export class DbService {
         return id
     }
 
-    async getApiKey(id: string): Promise<{ apikey: string; apiid: string }> {
+    async getApiKey(id: string): Promise<{ apikey: string; apiid: string; name: string }> {
         const idN = parseInt(id)
         const logger = this.logger
         return new Promise(function (resolve, reject) {
@@ -60,12 +60,20 @@ export class DbService {
                                 resolve(rows[0])
                             } else if (rows[0].county !== 'Zürich' && rows[0].county !== 'Zurich') {
                                 // if not from Zürich, also call search
-                                resolve({ apikey: 'search', apiid: idN.toString() })
+                                resolve({
+                                    apikey: 'search',
+                                    apiid: idN.toString(),
+                                    name: rows[0].name,
+                                })
                             } else {
-                                resolve({ apikey: 'zvv', apiid: idN.toString() })
+                                resolve({
+                                    apikey: 'zvv',
+                                    apiid: idN.toString(),
+                                    name: rows[0].name,
+                                })
                             }
                         } else {
-                            resolve({ apikey: 'zvv', apiid: idN.toString() })
+                            resolve({ apikey: 'zvv', apiid: idN.toString(), name: idN.toString() })
                         }
                     }
                 },

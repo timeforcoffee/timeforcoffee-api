@@ -16,7 +16,9 @@ dotenv.config()
 
 const memoryStore = cacheManager.caching({ store: 'memory', max: 300, ttl: 10 })
 const redisHost = process.env.REDIS_HOST || 'redis-service.tfc'
-const storeType = 'redis'
+// set this to memory, if you just want to use in memory cache
+
+const storeType: 'redis' | 'memory' = 'redis'
 const redisPort = parseInt(process.env.REDIS_PORT) || 6379
 const clusterStore = cacheManager.caching({
     store: redisStore,
@@ -24,7 +26,8 @@ const clusterStore = cacheManager.caching({
     port: redisPort,
     ttl: 10,
 })
-const redisClient = redis.createClient(redisPort, redisHost)
+
+const redisClient = storeType === 'redis' ? redis.createClient(redisPort, redisHost) : null
 redisClient.on('error', e => console.log(e))
 
 // currently we can't store everything in redis, we need need two redis instances
