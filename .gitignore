@@ -34,3 +34,4 @@ lerna-debug.log*
 !.vscode/extensions.json
 /stations.sqlite-shm
 /.env
+/stations.sqlite-wal

@@ -76,7 +76,20 @@ export class ChController {
                     api.name,
                 )
             default:
-                return this.checkForError(await this.zvvController.stationboard(id), id, api.name)
+                const zvvAnswer = this.checkForError(
+                    await this.zvvController.stationboard(id),
+                    id,
+                    api.name,
+                )
+                if ('error' in zvvAnswer) {
+                    this.logger.error(`zvv failed for ${id}, fall back to search`)
+                    return this.checkForError(
+                        await this.searchController.stationboard(id),
+                        id,
+                        api.name,
+                    )
+                }
+                return zvvAnswer
         }
     }
 
