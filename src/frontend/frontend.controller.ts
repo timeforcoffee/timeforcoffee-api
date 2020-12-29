@@ -17,6 +17,7 @@ export class FrontendController {
         if (path.endsWith('/')) {
             path += 'index.html'
         }
+        res.header('Cache-Control', 'public, max-age: 3600')
         // change the path to the correct html page path in your project
         res.sendFile(join(process.cwd(), './www' + path))
     }
