@@ -20,6 +20,8 @@ ADD . /home/node/tfc
 RUN cp -r www dist/
 RUN ./node_modules/.bin/nest build
 RUN yarn install --prod
+# that's huge... I guess that shouldn't be there...
+RUN rm -rf node_modules/luhn-generator/update
 
 
 FROM node:14-alpine

@@ -1,5 +1,5 @@
 import { Controller, Get, Header, Logger, Param } from '@nestjs/common'
-import { AllHtmlEntities } from 'html-entities'
+import { decode } from 'html-entities'
 import moment from 'moment-timezone'
 import { Moment } from 'moment-timezone'
 import { DbService } from '../db/db.service'
@@ -27,7 +27,7 @@ const stationLimit = (id: string): string => {
 }
 
 const sanitizeLine = (line: string): string => {
-    line = AllHtmlEntities.decode(line)
+    line = decode(line)
 
     return line
         .replace(/S( )+/, 'S')
@@ -106,7 +106,7 @@ export class ZvvController {
             id: await this.dbService.zvvToSbbId(lastLocation.location?.id),
             accessible: hasAccessible(connection.attributes_bfr?.[0]?.code) || false,
             platform: mainLocation.platform || null,
-            to: AllHtmlEntities.decode(product.direction),
+            to: decode(product.direction),
         }
     }
     @Get('stationboard/:id')
@@ -128,7 +128,7 @@ export class ZvvController {
         }
 
         return {
-            meta: { station_id: id, station_name: AllHtmlEntities.decode(data.station?.name) },
+            meta: { station_id: id, station_name: decode(data.station?.name) },
             departures: await this.getConnections(data.connections as any[]),
         }
     }
@@ -155,7 +155,7 @@ export class ZvvController {
             return { error: 'Wrong data format from data provider' }
         }
         return {
-            meta: { station_id: id, station_name: AllHtmlEntities.decode(data.station.name) },
+            meta: { station_id: id, station_name: decode(data.station.name) },
             departures: await this.getConnections(data.connections as any[]),
         }
     }
