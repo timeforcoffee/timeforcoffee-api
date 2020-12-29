@@ -83,13 +83,15 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                         redisClient.setnx(cachingKey, 'a', (err, res) => {
                             if (err) {
                                 resolve(false)
+                                return
                             }
                             if (res === 1) {
                                 resolve(true)
+                                redisClient.expire(cachingKey, 5)
+                                return
                             }
                             resolve(false)
                         })
-                        redisClient.expire(cachingKey, 10)
                     }))
                     if (alreadyCaching) {
                         await delay(100)
@@ -106,7 +108,7 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                         }
                     }
                 }
-                await cacheStore.set(argsKey, '__caching__', { ttl: 10 })
+                await cacheStore.set(argsKey, '__caching__', { ttl: 5 })
 
                 const result = await method.apply(t, args)
                 const calcTtl = typeof ttl === 'function' ? ttl() : ttl
