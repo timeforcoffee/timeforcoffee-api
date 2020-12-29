@@ -7,7 +7,7 @@ import { DeparturesError, DeparturesType, DepartureType } from './ch.type'
 import { OstController } from '../ost/ost.controller'
 import { BltController } from '../blt/blt.controller'
 import moment from 'moment-timezone'
-import { stripId } from './ch.service'
+import { OUTPUT_DATE_FORMAT, stripId } from './ch.service'
 import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
@@ -39,7 +39,21 @@ export class ChController {
         }
 
         const data = await this.stationboardCached(id)
-        //return data
+        if (!('error' in data)) {
+            const nextScheduled = data.departures?.[0]?.departure.scheduled
+            if (nextScheduled) {
+                const nextScheduledUnix = moment(nextScheduled, OUTPUT_DATE_FORMAT).unix()
+                const now = +new Date() / 1000
+                const CUT_TIME = 1200
+                // If first schedule is more than 21 minutes away, set cache time to 20 minutes before that
+                if (nextScheduledUnix - now > CUT_TIME + 60) {
+                    res.setHeader(
+                        'Cache-Control',
+                        'public, max-age=' + Math.floor(nextScheduledUnix - now - CUT_TIME),
+                    )
+                }
+            }
+        }
         res.send(data)
     }
 
