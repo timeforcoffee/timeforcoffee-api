@@ -28,7 +28,13 @@ const clusterStore = cacheManager.caching({
 })
 
 const redisClient = storeType === 'redis' ? redis.createClient(redisPort, redisHost) : null
-redisClient.on('error', e => console.log(e))
+redisClient.on('error', e => console.log('error', e.message))
+redisClient.on('reconnecting', e => {
+    console.log('Redis reconnecting', e.total_retry_time)
+})
+redisClient.on('Redis connect', e => console.log('connected'))
+redisClient.on('Redis end', e => console.log('end'))
+redisClient.on('ready', e => console.log('Redis ready'))
 
 // currently we can't store everything in redis, we need need two redis instances
 // small stuff like rokka images can be stored in redis nevertheless for now
@@ -39,7 +45,7 @@ export function delay(ms) {
 }
 
 export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
-    const cacheStore = storeType === 'redis' ? clusterStore : memoryStore
+    let cacheStore = storeType === 'redis' ? clusterStore : memoryStore
     return (target: Record<string, any>, propertyKey: string, descriptor: PropertyDescriptor) => {
         if (!key) {
             key = `${target.constructor.name}/${propertyKey.toString()}`
@@ -57,6 +63,13 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                 t: any
             }) {
                 // add args to key. changing method arguments will generate a different key
+                let currentStoreType: 'redis' | 'memory' = storeType
+                if (storeType === 'redis' && !redisClient.connected) {
+                    console.log('Redis not connected, fall back to memory store')
+                    currentStoreType = 'memory'
+                    cacheStore = memoryStore
+                }
+
                 const argsKey = `${key}/${JSON.stringify(args)}`
                 const cachedValue = await cacheStore.get(argsKey)
                 // prevents cache stompeding
@@ -64,6 +77,7 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                     await delay(100)
                     if (retry > 50) {
                         console.log('Took more than 50 retries... set to non caching currently')
+
                         await cacheStore.del(argsKey)
                     } else {
                         return callFunc({ args, retry: retry + 1, t })
@@ -78,7 +92,7 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                 }
                 const cachingKey = '__caching__' + argsKey
                 // make sure, we lock it when using redis with a locking key
-                if (storeType === 'redis') {
+                if (currentStoreType === 'redis') {
                     const alreadyCaching = !(await new Promise<boolean>((resolve, reject) => {
                         redisClient.setnx(cachingKey, 'a', (err, res) => {
                             if (err) {
@@ -115,7 +129,7 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                 const toStoreValue = JSON.stringify(result)
 
                 await cacheStore.set(argsKey, toStoreValue, { ttl: calcTtl })
-                if (storeType === 'redis') {
+                if (currentStoreType === 'redis') {
                     redisClient.del(cachingKey)
                 }
 
