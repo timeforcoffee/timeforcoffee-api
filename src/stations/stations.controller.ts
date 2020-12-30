@@ -3,8 +3,7 @@ import { HelpersService } from '../helpers/helpers.service'
 import { Cache } from '../helpers/helpers.cache'
 
 const stationURL =
-    'http://online.fahrplan.zvv.ch/bin/ajax-getstop.exe/dny?start=1&tpl=suggest2json&REQ0JourneyStopsS0A=7&getstop=1&noSession=yes&REQ0JourneyStopsB=25&REQ0JourneyStopsS0G='
-
+    'https://online.fahrplan.zvv.ch/bin/ajax-getstop.exe/dny?tpl=suggest2json&encoding=utf-8&REQ0JourneyStopsS0A=7&getstop=1&noSession=yes&REQ0JourneyStopsB=20&REQ0JourneyStopsF=distinguishStationAttribute;ZH&js=true&REQ0JourneyStopsS0G='
 @Controller('/')
 export class StationsController {
     constructor(private helpersService: HelpersService) {}
@@ -12,7 +11,9 @@ export class StationsController {
     @Header('Cache-Control', 'public, max-age=3600')
     @Cache({ ttl: 86400 })
     async findStation(@Param('name') name: string) {
-        const response = await this.helpersService.callApi(`${stationURL}${name.replace(' ', '+')}`)
+        const response = await this.helpersService.callApi(
+            `${stationURL}${name.replace(' ', '+').replace('*', '%3F')}`,
+        )
         if (response.error) {
             return response
         }

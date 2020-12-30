@@ -52,11 +52,11 @@ export class DbService {
                     if (err) {
                         reject(err)
                     } else {
-                        if (rows[0].altsbbid) {
-                            resolve(await mod.getApiKey(rows[0].altsbbid))
-                        }
                         const idString = idN.toString()
                         if (rows[0]) {
+                            if (rows[0].altsbbid) {
+                                resolve(await mod.getApiKey(rows[0].altsbbid))
+                            }
                             logger.debug(
                                 `Found for ${idN} stop: ${rows[0].name}. ${
                                     rows[0].apikey ? 'key:' + rows[0].apikey : ''
