@@ -8,6 +8,8 @@ const db = new sqlite3.Database('./stations.sqlite', sqlite3.OPEN_READONLY, err 
     console.log('Connected to the stations database.')
 })
 
+const ZVV_ONLY = ['SBB', 'VBZ', 'VZO']
+
 @Injectable()
 export class DbService {
     private readonly logger = new Logger(DbService.name)
@@ -41,7 +43,7 @@ export class DbService {
         const logger = this.logger
         return new Promise(function (resolve, reject) {
             db.all(
-                'select zcounty as county, zname as name, zapikey as apikey, zapiid as apiid from ZTFCSTATIONMODEL where ZID = ?',
+                'select zcounty as county, zname as name, zapikey as apikey, zapiid as apiid, zgo as go from ZTFCSTATIONMODEL where ZID = ?',
                 [idN],
                 function (err, rows) {
                     if (err) {
@@ -58,7 +60,11 @@ export class DbService {
                                     rows[0].apiid = id
                                 }
                                 resolve(rows[0])
-                            } else if (rows[0].county !== 'Zürich' && rows[0].county !== 'Zurich') {
+                            } else if (
+                                rows[0].county !== 'Zürich' &&
+                                rows[0].county !== 'Zurich' &&
+                                !ZVV_ONLY.includes(rows[0].go)
+                            ) {
                                 // if not from Zürich, also call search
                                 resolve({
                                     apikey: 'search',

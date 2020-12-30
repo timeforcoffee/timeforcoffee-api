@@ -13,7 +13,16 @@ import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
 import { Cache } from '../helpers/helpers.cache'
 
-const NOTEXISTING_IDS = ['8595033', '8573851', '8591026', '82', '8589565', '8594932', '8591055']
+const NOTEXISTING_IDS = [
+    '8595033',
+    '8573851',
+    '8591026',
+    '82',
+    '8589565',
+    '8594932',
+    '8591055',
+    '8508652',
+]
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
 @Controller('')
