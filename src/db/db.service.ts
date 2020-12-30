@@ -38,17 +38,24 @@ export class DbService {
         return id
     }
 
-    async getApiKey(id: string): Promise<{ apikey: string; apiid: string; name: string }> {
+    async getApiKey(
+        id: string,
+    ): Promise<{ apikey: string; apiid: string; name: string; id: string }> {
         const idN = parseInt(id)
         const logger = this.logger
+        const mod = this
         return new Promise(function (resolve, reject) {
             db.all(
-                'select zcounty as county, zname as name, zapikey as apikey, zapiid as apiid, zgo as go from ZTFCSTATIONMODEL where ZID = ?',
+                'select zid as id, zcounty as county, zname as name, zapikey as apikey, zapiid as apiid, zaltsbbid as altsbbid, zgo as go from ZTFCSTATIONMODEL where ZID = ?',
                 [idN],
-                function (err, rows) {
+                async function (err, rows) {
                     if (err) {
                         reject(err)
                     } else {
+                        if (rows[0].altsbbid) {
+                            resolve(await mod.getApiKey(rows[0].altsbbid))
+                        }
+                        const idString = idN.toString()
                         if (rows[0]) {
                             logger.debug(
                                 `Found for ${idN} stop: ${rows[0].name}. ${
@@ -68,18 +75,25 @@ export class DbService {
                                 // if not from Zürich, also call search
                                 resolve({
                                     apikey: 'search',
-                                    apiid: idN.toString(),
+                                    apiid: idString,
+                                    id: idString,
                                     name: rows[0].name,
                                 })
                             } else {
                                 resolve({
                                     apikey: 'zvv',
-                                    apiid: idN.toString(),
+                                    apiid: idString,
+                                    id: idString,
                                     name: rows[0].name,
                                 })
                             }
                         } else {
-                            resolve({ apikey: 'zvv', apiid: idN.toString(), name: idN.toString() })
+                            resolve({
+                                apikey: 'zvv',
+                                apiid: idString,
+                                name: idString,
+                                id: idString,
+                            })
                         }
                     }
                 },

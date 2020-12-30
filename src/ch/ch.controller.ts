@@ -91,14 +91,14 @@ export class ChController {
         switch (api.apikey) {
             case 'ost':
                 return this.combine(
-                    id,
+                    api.id,
                     this.ostController.stationboard(api.apiid),
                     api.apikey,
                     api.name,
                 )
             case 'blt':
                 return this.combine(
-                    id,
+                    api.id,
                     this.bltController.stationboard(api.apiid),
                     api.apikey,
                     api.name,
@@ -109,22 +109,22 @@ export class ChController {
             case 'gva':
             case 'search':
                 return this.combine(
-                    id,
-                    this.searchController.stationboard(id),
+                    api.id,
+                    this.searchController.stationboard(api.id),
                     api.apikey,
                     api.name,
                 )
             default:
                 const zvvAnswer = this.checkForError(
-                    await this.zvvController.stationboard(id),
-                    id,
+                    await this.zvvController.stationboard(api.id),
+                    api.id,
                     api.name,
                 )
                 if ('error' in zvvAnswer) {
-                    this.logger.error(`zvv failed for ${id}, fall back to search`)
+                    this.logger.error(`zvv failed for ${api.id}, fall back to search`)
                     return this.checkForError(
-                        await this.searchController.stationboard(id),
-                        id,
+                        await this.searchController.stationboard(api.id),
+                        api.id,
                         api.name,
                     )
                 }
