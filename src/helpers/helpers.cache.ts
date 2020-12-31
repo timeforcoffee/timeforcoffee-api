@@ -27,7 +27,10 @@ const clusterStore = cacheManager.caching({
     ttl: 10,
 })
 
-const redisClient = storeType === 'redis' ? redis.createClient(redisPort, redisHost) : null
+const redisClient =
+    storeType === 'redis'
+        ? redis.createClient(redisPort, redisHost, { retry_max_delay: 5000 })
+        : null
 redisClient.on('error', e => console.log('error', e.message))
 redisClient.on('reconnecting', e => {
     console.log('Redis reconnecting', e.total_retry_time)
@@ -45,7 +48,6 @@ export function delay(ms) {
 }
 
 export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
-    let cacheStore = storeType === 'redis' ? clusterStore : memoryStore
     return (target: Record<string, any>, propertyKey: string, descriptor: PropertyDescriptor) => {
         if (!key) {
             key = `${target.constructor.name}/${propertyKey.toString()}`
@@ -67,8 +69,8 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                 if (storeType === 'redis' && !redisClient.connected) {
                     console.log('Redis not connected, fall back to memory store')
                     currentStoreType = 'memory'
-                    cacheStore = memoryStore
                 }
+                const cacheStore = currentStoreType === 'redis' ? clusterStore : memoryStore
 
                 const argsKey = `${key}/${JSON.stringify(args)}`
                 const cachedValue = await cacheStore.get(argsKey)
