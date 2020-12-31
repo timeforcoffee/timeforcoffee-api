@@ -88,51 +88,83 @@ export class ChController {
                 departures: [],
             }
         }
+        let result: DeparturesType | DeparturesError = null
         switch (api.apikey) {
             case 'ost':
-                return this.combine(
+                result = await this.combine(
                     api.id,
                     this.ostController.stationboard(api.apiid),
                     api.apikey,
                     api.name,
                 )
+                break
             case 'blt':
-                return this.combine(
+                result = await this.combine(
                     api.id,
                     this.bltController.stationboard(api.apiid),
                     api.apikey,
                     api.name,
                 )
+                break
             case 'odp':
             case 'vbl':
             case 'bvb':
             case 'gva':
             case 'search':
-                return this.combine(
+                result = await this.combine(
                     api.id,
                     this.searchController.stationboard(api.id),
                     api.apikey,
                     api.name,
                 )
+                break
+
             default:
-                const zvvAnswer = this.checkForError(
+                result = this.checkForError(
                     await this.zvvController.stationboard(api.id),
                     api.id,
                     api.name,
                 )
-                if ('error' in zvvAnswer) {
+                if ('error' in result) {
                     this.logger.error(`zvv failed for ${api.id}, fall back to search`)
-                    return this.checkForError(
+                    result = await this.checkForError(
                         await this.searchController.stationboard(api.id),
                         api.id,
                         api.name,
                     )
                 }
-                return zvvAnswer
         }
+        if (result && !('error' in result)) {
+            this.logCount(result, api.id)
+        }
+        return result
     }
 
-    checkForError(response: DeparturesType | DeparturesError, id: string, stationName: string) {
+    private logCount(zvvAnswer: DeparturesType, id: string) {
+        const count = zvvAnswer.departures.reduce<{ scheduled: number; realtime: number }>(
+            (count, dept) => {
+                if (dept.departure.realtime) {
+                    count.realtime += 1
+                } else {
+                    count.scheduled += 1
+                }
+
+                return count
+            },
+            { scheduled: 0, realtime: 0 },
+        )
+        this.logger.debug(
+            `Found ${count.scheduled + count.realtime} departures, ${
+                count.realtime
+            } had realtime for ${id}.`,
+        )
+    }
+
+    checkForError(
+        response: DeparturesType | DeparturesError,
+        id: string,
+        stationName: string,
+    ): DeparturesType | DeparturesError {
         if ('error' in response && response.code === 'NOTFOUND') {
             this.logger.warn(`${stationName} not found in backends`)
             return {
