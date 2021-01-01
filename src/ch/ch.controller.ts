@@ -153,11 +153,11 @@ export class ChController {
             },
             { scheduled: 0, realtime: 0 },
         )
-        this.logger.debug(
-            `Found ${count.scheduled + count.realtime} departures, ${
-                count.realtime
-            } had realtime for ${id}.`,
-        )
+        if (count.realtime === 0) {
+            this.logger.debug(
+                `No realtime departures found for ${id}, found ${count.scheduled} scheduled departures.`,
+            )
+        }
     }
 
     checkForError(
