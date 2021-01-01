@@ -58,9 +58,11 @@ export class DbService {
                                 resolve(await mod.getApiKey(rows[0].altsbbid))
                             }
                             logger.debug(
-                                `Found for ${idN} stop: ${rows[0].name}. ${
-                                    rows[0].apikey ? 'key:' + rows[0].apikey : ''
-                                } ${rows[0].apiid ? 'id:' + rows[0].apiid : ''}`,
+                                `Found for ${idN} stop: ${rows[0].name} ${
+                                    rows[0].go ? 'go: ' + rows[0].go : ''
+                                } ${rows[0].apikey ? 'key: ' + rows[0].apikey : ''} ${
+                                    rows[0].apiid ? 'id: ' + rows[0].apiid : ''
+                                }`,
                             )
                             if (rows[0].apikey) {
                                 if (!rows[0].apiid) {

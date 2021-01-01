@@ -11,7 +11,7 @@ export class HelpersService {
         try {
             const response = await axios.get(url, { timeout: 5000 })
             const curTime = new Date().getTime()
-            this.logger.log(`Got ${url}. Took ${(curTime - startTime) / 1000} sec`)
+            this.logger.log(`Got ${url} - Took ${(curTime - startTime) / 1000} sec`)
             return response.data
         } catch (e) {
             this.logger.warn(`${url} threw an error, ${e.message}`)
