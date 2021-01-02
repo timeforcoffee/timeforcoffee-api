@@ -12,6 +12,7 @@ import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
 import { Cache } from '../helpers/helpers.cache'
+import { OpentransportdataController } from '../opentransportdata/opentransportdata.controller'
 
 const NOTEXISTING_IDS = [
     '8595033',
@@ -33,6 +34,7 @@ export class ChController {
         private bltController: BltController,
         private opendataController: OpendataController,
         private searchController: SearchController,
+        private otdController: OpentransportdataController,
         private dbService: DbService,
         private helpersService: HelpersService,
     ) {}
@@ -133,6 +135,14 @@ export class ChController {
                         api.name,
                     )
                 }
+                if ('error' in result) {
+                    this.logger.error(`search failed for ${api.id}, fall back to otd`)
+                    result = await this.checkForError(
+                        await this.otdController.stationboard(api.id),
+                        api.id,
+                        api.name,
+                    )
+                }
         }
         if (result && !('error' in result)) {
             this.logCount(result, api.id)
@@ -194,6 +204,7 @@ export class ChController {
             ),
         ])
 
+        //FIXME: Fallback to OTD, if both failed...
         if ('error' in responses[0] || !(responses[0].departures.length > 0)) {
             return this.checkForError(responses[1], id, stationName)
         }

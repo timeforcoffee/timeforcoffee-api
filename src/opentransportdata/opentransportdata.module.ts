@@ -5,5 +5,7 @@ import { HelpersModule } from '../helpers/helpers.module'
 @Module({
     controllers: [OpentransportdataController],
     imports: [HelpersModule],
+    exports: [OpentransportdataController],
+    providers: [OpentransportdataController],
 })
 export class OpentransportdataModule {}

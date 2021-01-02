@@ -7,6 +7,7 @@ import { BltModule } from '../blt/blt.module'
 import { HelpersModule } from '../helpers/helpers.module'
 import { OpendataModule } from '../opendata/opendata.module'
 import { SearchModule } from '../search/search.module'
+import { OpentransportdataModule } from '../opentransportdata/opentransportdata.module'
 
 @Module({
     controllers: [ChController],
@@ -18,6 +19,7 @@ import { SearchModule } from '../search/search.module'
         SearchModule,
         DbModule,
         HelpersModule,
+        OpentransportdataModule,
     ],
 })
 export class ChModule {}
