@@ -1,8 +1,9 @@
 import { Controller, Get, Param } from '@nestjs/common'
 import { HelpersService } from '../helpers/helpers.service'
-import { DeparturesType } from '../ch/ch.type'
+import { DeparturesError, DeparturesType } from '../ch/ch.type'
 import { stripId } from '../ch/ch.service'
 import { parseStringPromise } from 'xml2js'
+import { DbService } from '../db/db.service'
 
 function mapType(type: string): string {
     switch (type) {
@@ -24,10 +25,10 @@ function mapName(name: string): string {
 
 @Controller('/api/otd/')
 export class OpentransportdataController {
-    constructor(private helpersService: HelpersService) {}
+    constructor(private helpersService: HelpersService, private dbService: DbService) {}
 
     @Get('stationboard/:id')
-    async stationboard(@Param('id') id: string): Promise<DeparturesType> {
+    async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
         const data = `<?xml version="1.0" encoding="UTF-8"?>
 <Trias version="1.1" xmlns="http://www.vdv.de/trias" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -65,10 +66,30 @@ export class OpentransportdataController {
         )
 
         const dom = await parseStringPromise(response)
-        const departures =
+        const stopEventResponse =
             dom['trias:Trias']['trias:ServiceDelivery'][0]['trias:DeliveryPayload'][0][
                 'trias:StopEventResponse'
-            ][0]['trias:StopEventResult']
+            ][0]
+        if (stopEventResponse['trias:ErrorMessage']?.[0]['trias:Text'][0]) {
+            if (
+                stopEventResponse['trias:ErrorMessage']?.[0]['trias:Text'][0]['trias:Text'][0] ===
+                'STOPEVENT_LOCATIONUNSERVED'
+            ) {
+                return {
+                    meta: {
+                        station_id: id,
+                        station_name: (await this.dbService.getApiKey(id)).name || 'unknown',
+                    },
+                    departures: [],
+                }
+            }
+            return {
+                error:
+                    stopEventResponse['trias:ErrorMessage']?.[0]['trias:Text'][0]['trias:Text'][0],
+                source: 'otd',
+            }
+        }
+        const departures = stopEventResponse['trias:StopEventResult']
 
         const firstCall =
             departures[0]['trias:StopEvent'][0]['trias:ThisCall'][0]['trias:CallAtStop'][0]
