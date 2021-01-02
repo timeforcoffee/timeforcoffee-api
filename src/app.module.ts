@@ -18,6 +18,7 @@ import { HelpersModule } from './helpers/helpers.module'
 import { SearchModule } from './search/search.module'
 import { FrontendModule } from './frontend/frontend.module'
 import { Request, Response, NextFunction } from 'express'
+import { OpentransportdataModule } from './opentransportdata/opentransportdata.module';
 
 @Injectable()
 export class AppLoggerMiddleware implements NestMiddleware {
@@ -58,6 +59,7 @@ export class AppLoggerMiddleware implements NestMiddleware {
         HelpersModule,
         SearchModule,
         FrontendModule,
+        OpentransportdataModule,
     ],
     controllers: [],
     providers: [],
