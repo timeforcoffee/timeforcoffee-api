@@ -4,12 +4,30 @@ import { DeparturesType } from '../ch/ch.type'
 import { stripId } from '../ch/ch.service'
 import { parseStringPromise } from 'xml2js'
 
+function mapType(type: string): string {
+    switch (type) {
+        case 'rail':
+            return 'train'
+        default:
+            return type
+    }
+}
+
+function mapName(name: string): string {
+    return name
+        .replace(/S( )+/, 'S')
+        .replace(/SN( )+/, 'SN')
+        .replace(/IC.*/, 'IC')
+        .replace(/IR.*/, 'IR')
+        .replace(/ +/, ' ')
+}
+
 @Controller('/api/otd/')
 export class OpentransportdataController {
     constructor(private helpersService: HelpersService) {}
 
     @Get('stationboard/:id')
-    async stationboard(@Param('id') id: string): Promise<any> {
+    async stationboard(@Param('id') id: string): Promise<DeparturesType> {
         id = stripId(id)
         const data = `<?xml version="1.0" encoding="UTF-8"?>
 <Trias version="1.1" xmlns="http://www.vdv.de/trias" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -61,10 +79,10 @@ export class OpentransportdataController {
             },
             departures: departures.map(departure => {
                 const stopEvent = departure['trias:StopEvent'][0]
-                // console.log(stopEvent)
                 const service = stopEvent['trias:Service'][0]
                 const call = stopEvent['trias:ThisCall'][0]
-                const serviceDeparture = call['trias:CallAtStop'][0]['trias:ServiceDeparture'][0]
+                const callAtStop = call['trias:CallAtStop'][0]
+                const serviceDeparture = callAtStop['trias:ServiceDeparture'][0]
                 const scheduled = serviceDeparture['trias:TimetabledTime'][0]
                 const realtime = serviceDeparture['trias:EstimatedTime']
                     ? serviceDeparture['trias:EstimatedTime'][0]
@@ -82,8 +100,8 @@ export class OpentransportdataController {
                     id: service['trias:DestinationStopPointRef'][0],
                     to: service['trias:DestinationText'][0]['trias:Text'][0],
                     accessible: null, // TODO, it's in the xml
-                    name: service['trias:PublishedLineName'][0]['trias:Text'][0],
-                    type: service['trias:Mode'][0]['trias:PtMode'][0],
+                    name: mapName(service['trias:PublishedLineName'][0]['trias:Text'][0]),
+                    type: mapType(service['trias:Mode'][0]['trias:PtMode'][0]),
                     source: 'otd',
                     arrival: {
                         scheduled: lastCallArrival['trias:TimetabledTime'][0],
@@ -91,6 +109,9 @@ export class OpentransportdataController {
                             ? lastCallArrival['trias:EstimatedTime'][0]
                             : undefined,
                     },
+                    platform: callAtStop['EstimatedBay']
+                        ? callAtStop['trias:EstimatedBay'][0]['trias:Text'][0]
+                        : callAtStop['trias:PlannedBay']?.[0]['trias:Text'][0] || null,
                 }
             }),
         }

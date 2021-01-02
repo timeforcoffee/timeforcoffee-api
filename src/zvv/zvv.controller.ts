@@ -32,8 +32,8 @@ const sanitizeLine = (line: string): string => {
     return line
         .replace(/S( )+/, 'S')
         .replace(/SN( )+/, 'SN')
-        .replace(/IC( )+.*/, 'IC')
-        .replace(/IR( )+.*/, 'IR')
+        .replace(/IC.*/, 'IC')
+        .replace(/IR.*/, 'IR')
         .replace(/Tro( )+/, '')
         .replace(/Trm( )+/, '')
         .replace(/Bus +/, '')
