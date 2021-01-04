@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common'
 import axios, { AxiosRequestConfig } from 'axios'
+import { SlackService } from '../slack/slack.service'
 
 @Injectable()
 export class HelpersService {
     private readonly logger = new Logger(HelpersService.name)
-
+    constructor(private slackService: SlackService) {}
     async callApi(url: string): Promise<any> {
         const startTime = +new Date()
 
@@ -36,7 +37,9 @@ export class HelpersService {
             this.logger.log(`Got ${url} - Took ${(curTime - startTime) / 1000} sec`)
             return response.data
         } catch (e) {
-            this.logger.warn(`${url} threw an error, ${e.message}`)
+            const messsage = `${url} threw an error, ${e.message}`
+            this.logger.error(messsage)
+            this.slackService.sendAlert({ text: messsage }, 'callApiPost')
             return { error: e.message, source: url }
         }
     }

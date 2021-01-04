@@ -35,6 +35,9 @@ spec:
       containers:
       - image: docker.gitlab.liip.ch/chregu/repo/tfc-api:latest
         name: tfc-api
+#        env:
+#        - name: SLACK_NOTIFICATION_URL
+#          value: "" # set this to the correct value...
         resources:
           requests:
             memory: "50Mi"
@@ -63,6 +66,7 @@ spec:
           successThreshold: 1
           timeoutSeconds: 2
         imagePullPolicy: Always
+
       restartPolicy: Always
       imagePullSecrets:
         - name: regcred

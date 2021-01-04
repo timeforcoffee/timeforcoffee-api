@@ -8,6 +8,7 @@ import { HelpersModule } from '../helpers/helpers.module'
 import { OpendataModule } from '../opendata/opendata.module'
 import { SearchModule } from '../search/search.module'
 import { OpentransportdataModule } from '../opentransportdata/opentransportdata.module'
+import { SlackModule } from '../slack/slack.module'
 
 @Module({
     controllers: [ChController],
@@ -20,6 +21,7 @@ import { OpentransportdataModule } from '../opentransportdata/opentransportdata.
         DbModule,
         HelpersModule,
         OpentransportdataModule,
+        SlackModule,
     ],
 })
 export class ChModule {}

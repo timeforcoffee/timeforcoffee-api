@@ -13,6 +13,7 @@ import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
 import { Cache } from '../helpers/helpers.cache'
 import { OpentransportdataController } from '../opentransportdata/opentransportdata.controller'
+import { SlackService } from '../slack/slack.service'
 
 const NOTEXISTING_IDS = [
     '8595033',
@@ -37,6 +38,7 @@ export class ChController {
         private otdController: OpentransportdataController,
         private dbService: DbService,
         private helpersService: HelpersService,
+        private slackService: SlackService,
     ) {}
     private readonly logger = new Logger(ChController.name)
 
@@ -128,7 +130,10 @@ export class ChController {
                     api.name,
                 )
                 if ('error' in result) {
-                    this.logger.error(`zvv failed for ${api.id}, fall back to search`)
+                    const message = `zvv failed for ${api.id}, fall back to search. ${result.error}`
+                    this.logger.error(message)
+                    this.slackService.sendAlert({ text: message }, 'zvvFail')
+
                     result = await this.checkForError(
                         await this.searchController.stationboard(api.id),
                         api.id,
@@ -136,7 +141,9 @@ export class ChController {
                     )
                 }
                 if ('error' in result) {
-                    this.logger.error(`search failed for ${api.id}, fall back to otd`)
+                    const message = `search failed for ${api.id}, fall back to otd. ${result.error}`
+                    this.logger.error(message)
+                    this.slackService.sendAlert({ text: message }, 'searchFail')
                     result = await this.checkForError(
                         await this.otdController.stationboard(api.id),
                         api.id,
