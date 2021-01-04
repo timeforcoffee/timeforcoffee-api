@@ -28,9 +28,8 @@ const stationLimit = (id: string): string => {
 
 const sanitizeLine = (line: string): string => {
     line = decode(line)
-
     return line
-        .replace(/S( )+/, 'S')
+        .replace(/^[S ]+/, 'S')
         .replace(/SN( )+/, 'SN')
         .replace(/IC.*/, 'IC')
         .replace(/IR.*/, 'IR')
