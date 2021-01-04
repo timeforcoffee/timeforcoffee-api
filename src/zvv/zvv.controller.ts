@@ -11,21 +11,6 @@ import { Cache } from '../helpers/helpers.cache'
 const stationBaseUrl =
     'http://online.fahrplan.zvv.ch/bin/stboard.exe/dny?dirInput=&boardType=dep&start=1&tpl=stbResult2json&input='
 
-const stationLimit = (id: string): string => {
-    id = stripId(id)
-    switch (id) {
-        case '8503000': // Zürich HB
-        case '8507000': // bern
-        case '8507785': // Bern Hauptbahnof
-        case '8500010': //Basel SBB
-        case '22': //Basel
-        case '8505000': //Luzern
-            return '200'
-        default:
-            return '100'
-    }
-}
-
 const sanitizeLine = (line: string): string => {
     line = decode(line)
     return line
@@ -112,7 +97,7 @@ export class ZvvController {
     @Header('Cache-Control', 'public, max-age=29')
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
-        const url = `${stationBaseUrl}${id}&maxJourneys=${stationLimit(id)}`
+        const url = `${stationBaseUrl}${id}&maxJourneys=${this.helpersService.stationLimit(id)}`
 
         const data = await this.helpersService.callApi(url)
         if (data.error) {
@@ -142,7 +127,7 @@ export class ZvvController {
         id = stripId(id)
         const datetimeObj = moment.tz(starttime, 'YYYY-MM-DDTHH:mm', 'Europe/Zurich')
 
-        const url = `${stationBaseUrl}${id}&maxJourneys=${stationLimit(
+        const url = `${stationBaseUrl}${id}&maxJourneys=${this.helpersService.stationLimit(
             id,
         )}&date=${datetimeObj.format('DD.MM.YY')}&time=${datetimeObj.format('HH:mm')}`
 

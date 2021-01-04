@@ -4,7 +4,7 @@ import { DepartureType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import moment, { Moment } from 'moment-timezone'
 
-const stationBaseUrl = 'https://timetable.search.ch/api/stationboard?show_delays=1&limit=100&stop='
+const stationBaseUrl = 'https://timetable.search.ch/api/stationboard?show_delays=1'
 
 function colorConvert(color: string): string {
     if (color.length === 3) {
@@ -45,7 +45,7 @@ export class SearchController {
     @Get('stationboard/:id')
     async stationboard(@Param('id') id: string): Promise<any> {
         id = stripId(id)
-        const url = `${stationBaseUrl}${id}`
+        const url = `${stationBaseUrl}&limit=${this.helpersService.stationLimit(id)}&stop=${id}`
         const data = await this.helpersService.callApi(url)
         if (data.error) {
             return data

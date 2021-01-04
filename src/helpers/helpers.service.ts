@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import axios, { AxiosRequestConfig } from 'axios'
 import { SlackService } from '../slack/slack.service'
+import { stripId } from '../ch/ch.service'
 
 @Injectable()
 export class HelpersService {
@@ -41,6 +42,20 @@ export class HelpersService {
             this.logger.error(messsage)
             this.slackService.sendAlert({ text: messsage }, 'callApiPost')
             return { error: e.message, source: url }
+        }
+    }
+    stationLimit(id: string): string {
+        id = stripId(id)
+        switch (id) {
+            case '8503000': // Zürich HB
+            case '8507000': // bern
+            case '8507785': // Bern Hauptbahnof
+            case '8500010': //Basel SBB
+            case '22': //Basel
+            case '8505000': //Luzern
+                return '200'
+            default:
+                return '50'
         }
     }
 }
