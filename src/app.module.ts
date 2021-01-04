@@ -28,18 +28,18 @@ export class AppLoggerMiddleware implements NestMiddleware {
 
     use(request: Request, response: Response, next: NextFunction): void {
         const { method, originalUrl: url } = request
-        const userAgent = request.get('user-agent') || ''
+        const userAgent = request.get('user-agent') || '-'
 
         const startTime = +new Date()
-
+        const remoteAddr = request.get('x-real-ip') || '-'
         response.on('close', () => {
-            if (url !== '/') {
+            if (!userAgent.includes('kube-probe') && remoteAddr !== '94.130.108.121') {
                 const { statusCode } = response
                 const curTime = new Date().getTime()
                 this.logger.log(
                     `${method} ${url} ${statusCode} ${
                         (curTime - startTime) / 1000
-                    } ${userAgent.replace(/CFNetwork.*/, '')}`,
+                    } ${remoteAddr} ${userAgent.replace(/CFNetwork.*/, '')}`,
                 )
             }
         })
