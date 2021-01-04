@@ -4,6 +4,7 @@ import { SlackService } from '../slack/slack.service'
 import { stripId } from '../ch/ch.service'
 import { redisClient } from './helpers.cache'
 
+export const DEFAULT_DEPARTURES_LIMIT = 20
 @Injectable()
 export class HelpersService {
     private readonly logger = new Logger(HelpersService.name)
@@ -70,12 +71,13 @@ export class HelpersService {
                 return limit
             }
         }
-        return '30'
+        return DEFAULT_DEPARTURES_LIMIT.toString()
     }
 
-    setStationLimit(id: string, limit: string) {
+    setStationLimit(id: string, limit: number) {
         if (redisClient && redisClient.connected) {
-            redisClient.set(`station:limit:${id}`, limit)
+            this.logger.debug(`Set station limit for ${id} to ${limit}`)
+            redisClient.set(`station:limit:${id}`, limit.toString())
         }
     }
 }

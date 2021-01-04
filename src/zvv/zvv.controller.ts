@@ -5,7 +5,7 @@ import { Moment } from 'moment-timezone'
 import { DbService } from '../db/db.service'
 import { DeparturesError, DeparturesType, DepartureType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
-import { HelpersService } from '../helpers/helpers.service'
+import { DEFAULT_DEPARTURES_LIMIT, HelpersService } from '../helpers/helpers.service'
 import { Cache } from '../helpers/helpers.cache'
 
 const stationBaseUrl =
@@ -97,9 +97,8 @@ export class ZvvController {
     @Header('Cache-Control', 'public, max-age=29')
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
-        const url = `${stationBaseUrl}${id}&maxJourneys=${await this.helpersService.stationLimit(
-            id,
-        )}`
+        const limit = await this.helpersService.stationLimit(id)
+        const url = `${stationBaseUrl}${id}&maxJourneys=${limit}`
 
         const data = await this.helpersService.callApi(url)
         if (data.error) {
@@ -113,9 +112,30 @@ export class ZvvController {
             return { error: `Station ${id} not found in backend`, source: url, code: 'NOTFOUND' }
         }
 
+        const departures = await this.getConnections(data.connections as any[])
+        if (departures.length > 0) {
+            const lastScheduled = moment(departures[departures.length - 1].departure.scheduled)
+            const firstScheduled = moment(departures[0].departure.scheduled)
+
+            // if first and last scheduled are more than four hours away, we may have asked for too many
+            // decrease it (in case, we increase the limit for some station way too much)
+            // and are on the same day (to avoid "over night" issues)
+            if (
+                parseInt(limit) >= DEFAULT_DEPARTURES_LIMIT + 10 &&
+                lastScheduled.diff(firstScheduled, 'minutes') > 240 &&
+                lastScheduled.format('YYYY-MM-DD') === firstScheduled.format('YYYY-MM-DD')
+            ) {
+                this.logger.warn(
+                    `Too many departures for ${id}, last was at ${lastScheduled.format(
+                        'YYYY-MM-DD HH:mm',
+                    )}. Lower limit by 10`,
+                )
+                this.helpersService.setStationLimit(id, parseInt(limit) - 10)
+            }
+        }
         return {
             meta: { station_id: id, station_name: decode(data.station?.name) },
-            departures: await this.getConnections(data.connections as any[]),
+            departures,
         }
     }
 
@@ -133,22 +153,40 @@ export class ZvvController {
             'DD.MM.YY',
         )}&time=${datetimeObj.format('HH:mm')}`
 
+        // set limit to 100, if someone got until here, makes sense to just deliver some more stations
+        // in the first request later
+        // and we ask for within an 120 minutes (that's what the App uses)
+        const diffMinutes = datetimeObj.diff(moment(), 'minutes')
+        // if negative, it's in the past, just return current...
+        if (diffMinutes < 0) {
+            return this.stationboard(id)
+        }
+        if (diffMinutes < 110) {
+            const limitInt = parseInt(limit)
+            if (limitInt < 100) {
+                // if less than 60 minutes, we can add 30, otherwise add 10 to the limit
+                if (diffMinutes < 30) {
+                    this.helpersService.setStationLimit(id, Math.min(100, limitInt + 40))
+                } else if (diffMinutes < 60) {
+                    this.helpersService.setStationLimit(id, Math.min(100, limitInt + 30))
+                } else {
+                    this.helpersService.setStationLimit(id, limitInt + 10)
+                }
+            }
+            // and if within 50 minutes, and less than 100 limit, we can set it to 200
+            else if (datetimeObj.diff(moment(), 'minutes') < 50) {
+                if (parseInt(limit) < 200) {
+                    this.helpersService.setStationLimit(id, limitInt + 10)
+                }
+            }
+        }
+
         const data = await this.helpersService.callApi(url)
         if (data.error) {
             return data
         }
         if (!data.station || !data.connections) {
             return { error: 'Wrong data format from data provider' }
-        }
-        // set limit to 100, if someone got until here, makes sense to just deliver some more stations
-        // in the first request later
-        // and we ask for within an 90 minutes
-        if (datetimeObj.diff(moment(), 'minutes') < 90) {
-            if (parseInt(limit) < 50) {
-                this.helpersService.setStationLimit(id, '50')
-            } else if (parseInt(limit) < 100) {
-                this.helpersService.setStationLimit(id, '100')
-            }
         }
 
         return {
