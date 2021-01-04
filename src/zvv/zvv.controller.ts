@@ -142,9 +142,15 @@ export class ZvvController {
         }
         // set limit to 100, if someone got until here, makes sense to just deliver some more stations
         // in the first request later
-        if (parseInt(limit) < 100) {
-            this.helpersService.setStationLimit(id, '100')
+        // and we ask for within an 90 minutes
+        if (datetimeObj.diff(moment(), 'minutes') < 90) {
+            if (parseInt(limit) < 50) {
+                this.helpersService.setStationLimit(id, '50')
+            } else if (parseInt(limit) < 100) {
+                this.helpersService.setStationLimit(id, '100')
+            }
         }
+
         return {
             meta: { station_id: id, station_name: decode(data.station.name) },
             departures: await this.getConnections(data.connections as any[]),

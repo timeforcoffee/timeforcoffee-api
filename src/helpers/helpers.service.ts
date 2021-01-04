@@ -70,7 +70,7 @@ export class HelpersService {
                 return limit
             }
         }
-        return '50'
+        return '30'
     }
 
     setStationLimit(id: string, limit: string) {
