@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import axios, { AxiosRequestConfig } from 'axios'
 import { SlackService } from '../slack/slack.service'
 import { stripId } from '../ch/ch.service'
+import { redisClient } from './helpers.cache'
 
 @Injectable()
 export class HelpersService {
@@ -44,7 +45,7 @@ export class HelpersService {
             return { error: e.message, source: url }
         }
     }
-    stationLimit(id: string): string {
+    async stationLimit(id: string): Promise<string> {
         id = stripId(id)
         switch (id) {
             case '8503000': // Zürich HB
@@ -54,8 +55,27 @@ export class HelpersService {
             case '22': //Basel
             case '8505000': //Luzern
                 return '200'
-            default:
-                return '50'
+        }
+        if (redisClient && redisClient.connected) {
+            const limit = await new Promise<string | null>(resolve => {
+                redisClient.get(`station:limit:${id}`, (err, value) => {
+                    if (err) {
+                        resolve(null)
+                        return
+                    }
+                    resolve(value)
+                })
+            })
+            if (limit) {
+                return limit
+            }
+        }
+        return '50'
+    }
+
+    setStationLimit(id: string, limit: string) {
+        if (redisClient && redisClient.connected) {
+            redisClient.set(`station:limit:${id}`, limit)
         }
     }
 }

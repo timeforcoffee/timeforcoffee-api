@@ -97,7 +97,9 @@ export class ZvvController {
     @Header('Cache-Control', 'public, max-age=29')
     async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
-        const url = `${stationBaseUrl}${id}&maxJourneys=${this.helpersService.stationLimit(id)}`
+        const url = `${stationBaseUrl}${id}&maxJourneys=${await this.helpersService.stationLimit(
+            id,
+        )}`
 
         const data = await this.helpersService.callApi(url)
         if (data.error) {
@@ -126,10 +128,10 @@ export class ZvvController {
     ): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
         const datetimeObj = moment.tz(starttime, 'YYYY-MM-DDTHH:mm', 'Europe/Zurich')
-
-        const url = `${stationBaseUrl}${id}&maxJourneys=${this.helpersService.stationLimit(
-            id,
-        )}&date=${datetimeObj.format('DD.MM.YY')}&time=${datetimeObj.format('HH:mm')}`
+        const limit = await this.helpersService.stationLimit(id)
+        const url = `${stationBaseUrl}${id}&maxJourneys=${limit}&date=${datetimeObj.format(
+            'DD.MM.YY',
+        )}&time=${datetimeObj.format('HH:mm')}`
 
         const data = await this.helpersService.callApi(url)
         if (data.error) {
@@ -137,6 +139,11 @@ export class ZvvController {
         }
         if (!data.station || !data.connections) {
             return { error: 'Wrong data format from data provider' }
+        }
+        // set limit to 100, if someone got until here, makes sense to just deliver some more stations
+        // in the first request later
+        if (parseInt(limit) < 100) {
+            this.helpersService.setStationLimit(id, '100')
         }
         return {
             meta: { station_id: id, station_name: decode(data.station.name) },

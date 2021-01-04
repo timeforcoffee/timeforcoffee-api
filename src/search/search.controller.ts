@@ -45,7 +45,9 @@ export class SearchController {
     @Get('stationboard/:id')
     async stationboard(@Param('id') id: string): Promise<any> {
         id = stripId(id)
-        const url = `${stationBaseUrl}&limit=${this.helpersService.stationLimit(id)}&stop=${id}`
+        const url = `${stationBaseUrl}&limit=${await this.helpersService.stationLimit(
+            id,
+        )}&stop=${id}`
         const data = await this.helpersService.callApi(url)
         if (data.error) {
             return data

@@ -27,10 +27,11 @@ const clusterStore = cacheManager.caching({
     ttl: 10,
 })
 
-const redisClient =
+export const redisClient =
     storeType === 'redis'
         ? redis.createClient(redisPort, redisHost, { retry_max_delay: 5000 })
         : null
+
 redisClient.on('error', e => console.log('error', e.message))
 redisClient.on('reconnecting', e => {
     console.log('Redis reconnecting', e.total_retry_time)
