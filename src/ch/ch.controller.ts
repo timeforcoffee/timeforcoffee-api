@@ -16,9 +16,15 @@ import { OpentransportdataController } from '../opentransportdata/opentransportd
 import { SlackService } from '../slack/slack.service'
 
 const NOTEXISTING_IDS = [
+    '65',
+    '66',
     '82',
+    '8500364',
     '8508652',
+    '8530117',
+    '8531345',
     '8573851',
+    '8588742',
     '8589565',
     '8591026',
     '8591055',
