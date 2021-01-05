@@ -1,5 +1,5 @@
 import { Controller, Get, Logger, Param } from '@nestjs/common'
-import { HelpersService } from '../helpers/helpers.service'
+import { DEFAULT_DEPARTURES_LIMIT, HelpersService } from '../helpers/helpers.service'
 import { DepartureType } from '../ch/ch.type'
 import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import moment, { Moment } from 'moment-timezone'
@@ -43,10 +43,14 @@ export class SearchController {
     constructor(private helpersService: HelpersService) {}
     private readonly logger = new Logger(SearchController.name)
     @Get('stationboard/:id')
-    async stationboard(@Param('id') id: string): Promise<any> {
+    async stationboard(
+        @Param('id') id: string,
+        defaultLimit: number | null = DEFAULT_DEPARTURES_LIMIT,
+    ): Promise<any> {
         id = stripId(id)
         const url = `${stationBaseUrl}&limit=${await this.helpersService.stationLimit(
             id,
+            defaultLimit,
         )}&stop=${id}`
         const data = await this.helpersService.callApi(url)
         if (data.error) {

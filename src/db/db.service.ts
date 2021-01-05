@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import * as sqlite3 from 'sqlite3'
+import { DEFAULT_DEPARTURES_LIMIT } from '../helpers/helpers.service'
 
 const db = new sqlite3.Database('./stations.sqlite', sqlite3.OPEN_READONLY, err => {
     if (err) {
@@ -40,13 +41,13 @@ export class DbService {
 
     async getApiKey(
         id: string,
-    ): Promise<{ apikey: string; apiid: string; name: string; id: string }> {
+    ): Promise<{ apikey: string; apiid: string; name: string; id: string; limit: number | null }> {
         const idN = parseInt(id)
         const logger = this.logger
         const mod = this
         return new Promise(function (resolve, reject) {
             db.all(
-                'select zid as id, zcounty as county, zname as name, zapikey as apikey, zapiid as apiid, zaltsbbid as altsbbid, zgo as go from ZTFCSTATIONMODEL where ZID = ?',
+                'select zid as id, zcounty as county, zname as name, zapikey as apikey, zapiid as apiid, zaltsbbid as altsbbid, zgo as go, zlimit as `limit` from ZTFCSTATIONMODEL where ZID = ?',
                 [idN],
                 async function (err, rows) {
                     if (err) {
@@ -80,6 +81,7 @@ export class DbService {
                                     apiid: idString,
                                     id: idString,
                                     name: rows[0].name,
+                                    limit: rows[0].limit,
                                 })
                             } else {
                                 resolve({
@@ -87,6 +89,7 @@ export class DbService {
                                     apiid: idString,
                                     id: idString,
                                     name: rows[0].name,
+                                    limit: rows[0].limit,
                                 })
                             }
                         } else {
@@ -95,6 +98,7 @@ export class DbService {
                                 apiid: idString,
                                 name: idString,
                                 id: idString,
+                                limit: DEFAULT_DEPARTURES_LIMIT,
                             })
                         }
                     }

@@ -20,6 +20,7 @@ const NOTEXISTING_IDS = [
     '66',
     '82',
     '8500364',
+    '8502664',
     '8502667',
     '8508652',
     '8530117',
@@ -128,7 +129,7 @@ export class ChController {
             case 'search':
                 result = await this.combine(
                     api.id,
-                    this.searchController.stationboard(api.id),
+                    this.searchController.stationboard(api.id, api.limit),
                     api.apikey,
                     api.name,
                 )
@@ -136,7 +137,7 @@ export class ChController {
 
             default:
                 result = this.checkForError(
-                    await this.zvvController.stationboard(api.id),
+                    await this.zvvController.stationboard(api.id, api.limit),
                     api.id,
                     api.name,
                 )
@@ -146,7 +147,7 @@ export class ChController {
                     this.slackService.sendAlert({ text: message }, 'zvvFail')
 
                     result = await this.checkForError(
-                        await this.searchController.stationboard(api.id),
+                        await this.searchController.stationboard(api.id, api.limit),
                         api.id,
                         api.name,
                     )
@@ -156,7 +157,7 @@ export class ChController {
                     this.logger.error(message)
                     this.slackService.sendAlert({ text: message }, 'searchFail')
                     result = await this.checkForError(
-                        await this.otdController.stationboard(api.id),
+                        await this.otdController.stationboard(api.id, api.limit),
                         api.id,
                         api.name,
                     )
@@ -195,6 +196,10 @@ export class ChController {
     ): DeparturesType | DeparturesError {
         if ('error' in response && response.code === 'NOTFOUND') {
             this.logger.warn(`${stationName} not found in backends`)
+            this.slackService.sendAlert(
+                { text: `${stationName} ${id} not found in backends` },
+                'notFound',
+            )
             return {
                 meta: { station_id: id, station_name: `${stationName}. Station not found` },
                 departures: [],

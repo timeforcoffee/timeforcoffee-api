@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common'
-import { HelpersService } from '../helpers/helpers.service'
+import { DEFAULT_DEPARTURES_LIMIT, HelpersService } from '../helpers/helpers.service'
 import { DeparturesError, DeparturesType } from '../ch/ch.type'
 import { stripId } from '../ch/ch.service'
 import { parseStringPromise } from 'xml2js'
@@ -28,8 +28,13 @@ export class OpentransportdataController {
     constructor(private helpersService: HelpersService, private dbService: DbService) {}
 
     @Get('stationboard/:id')
-    async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
+    async stationboard(
+        @Param('id') id: string,
+        defaultLimit: number | null = DEFAULT_DEPARTURES_LIMIT,
+    ): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
+        const limit = await this.helpersService.stationLimit(id, defaultLimit)
+
         const data = `<?xml version="1.0" encoding="UTF-8"?>
 <Trias version="1.1" xmlns="http://www.vdv.de/trias" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <ServiceRequest>
@@ -44,7 +49,7 @@ export class OpentransportdataController {
 <!--                    <DepArrTime>2020-11-04T14:04:11</DepArrTime>-->
                 </Location>
                 <Params>
-                    <NumberOfResults>40</NumberOfResults>
+                    <NumberOfResults>${limit}</NumberOfResults>
                     <StopEventType>departure</StopEventType>
                     <IncludePreviousCalls>false</IncludePreviousCalls>
                     <IncludeOnwardCalls>true</IncludeOnwardCalls>

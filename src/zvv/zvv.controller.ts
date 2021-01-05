@@ -95,9 +95,12 @@ export class ZvvController {
     }
     @Get('stationboard/:id')
     @Header('Cache-Control', 'public, max-age=29')
-    async stationboard(@Param('id') id: string): Promise<DeparturesType | DeparturesError> {
+    async stationboard(
+        @Param('id') id: string,
+        defaultLimit: number | null = DEFAULT_DEPARTURES_LIMIT,
+    ): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
-        const limit = await this.helpersService.stationLimit(id)
+        const limit = await this.helpersService.stationLimit(id, defaultLimit)
         const url = `${stationBaseUrl}${id}&maxJourneys=${limit}`
 
         const data = await this.helpersService.callApi(url)
