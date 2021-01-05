@@ -327,6 +327,9 @@ export class ChController {
                     const firstRealSection = connection.sections.find(section => {
                         return section.journey !== null
                     })
+                    if (!firstRealSection) {
+                        return false
+                    }
                     if (datetimeArrivalObj) {
                         return (
                             firstRealSection.departure?.departureTimestamp === datetimeObj.unix() &&
