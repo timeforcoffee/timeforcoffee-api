@@ -77,6 +77,9 @@ export class HelpersService {
         // we can also avoid a DB lookup in ZvvController.stationboardStarttime this way
         // since the one in redis should be the correct one
         if (defaultLimit !== DEFAULT_DEPARTURES_LIMIT) {
+            this.logger.debug(
+                `Station limit for ${id} was not set in redis, but taken from DB. Set it in redis.`,
+            )
             this.setStationLimit(id, defaultLimit)
         }
         return defaultLimit.toString()

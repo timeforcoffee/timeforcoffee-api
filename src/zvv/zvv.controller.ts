@@ -120,7 +120,7 @@ export class ZvvController {
             const lastScheduled = moment(departures[departures.length - 1].departure.scheduled)
             const firstScheduled = moment(departures[0].departure.scheduled)
 
-            // if first and last scheduled are more than four hours away, we may have asked for too many
+            // if first and last scheduled are more than 4 hours away, we may have asked for too many
             // decrease it (in case, we increase the limit for some station way too much)
             // and are on the same day (to avoid "over night" issues)
             if (

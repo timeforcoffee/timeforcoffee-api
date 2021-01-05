@@ -18,15 +18,21 @@ import { SlackService } from '../slack/slack.service'
 const NOTEXISTING_IDS = [
     '65',
     '66',
+    '72',
     '82',
     '8500364',
     '8502664',
     '8502667',
+    '8502668',
     '8508652',
     '8530117',
     '8530216',
+    '8530647',
     '8531165',
+    '8531332',
+    '8531339',
     '8531345',
+    '8531392',
     '8573851',
     '8588742',
     '8589565',
@@ -112,6 +118,7 @@ export class ChController {
                     this.ostController.stationboard(api.apiid),
                     api.apikey,
                     api.name,
+                    api.limit,
                 )
                 break
             case 'blt':
@@ -120,6 +127,7 @@ export class ChController {
                     this.bltController.stationboard(api.apiid),
                     api.apikey,
                     api.name,
+                    api.limit,
                 )
                 break
             case 'odp':
@@ -132,6 +140,7 @@ export class ChController {
                     this.searchController.stationboard(api.id, api.limit),
                     api.apikey,
                     api.name,
+                    api.limit,
                 )
                 break
 
@@ -213,9 +222,10 @@ export class ChController {
         stationboardPromise: Promise<DeparturesType>,
         apikey: string,
         stationName: string,
+        limit: number | null,
     ): Promise<DeparturesType | DeparturesError> {
         const responses: (DeparturesType | DeparturesError)[] = await Promise.all([
-            this.zvvController.stationboard(id).catch(
+            this.zvvController.stationboard(id, limit).catch(
                 (e): DeparturesError => {
                     return { error: e.message, source: 'zvv' }
                 },
