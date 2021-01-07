@@ -11,11 +11,12 @@ USER root
 RUN chown node /home/node/tfc
 USER node
 RUN mkdir dist
-ADD stations.sqlite* /home/node/tfc/dist/
+ADD stations.sqlite* /home/node/tfc/
+
 USER root
-RUN chown node /home/node/tfc/dist/*
+RUN chown node /home/node/tfc/stations.sqli*
 USER node
-RUN sqlite3 dist/stations.sqlite "VACUUM"
+RUN sqlite3 stations.sqlite "VACUUM"
 ADD . /home/node/tfc
 RUN cp -r www dist/
 RUN ./node_modules/.bin/nest build
@@ -26,6 +27,7 @@ RUN rm -rf node_modules/luhn-generator/update
 
 FROM node:14-alpine
 COPY --from=build /home/node/tfc/node_modules /home/node/tfc/node_modules
+COPY --from=build /home/node/tfc/stations.sqlite /home/node/tfc/dist/
 COPY --from=build /home/node/tfc/dist /home/node/tfc/dist
 #RUN chown  node  /home/node/tfc/dist/stations.sqlite*
 RUN chown  node  /home/node/tfc/dist/
