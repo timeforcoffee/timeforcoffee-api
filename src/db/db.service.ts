@@ -41,13 +41,30 @@ export class DbService {
 
     async getApiKey(
         id: string,
-    ): Promise<{ apikey: string; apiid: string; name: string; id: string; limit: number | null }> {
+    ): Promise<{
+        apikey: string
+        apiid: string
+        name: string
+        id: string
+        limit: number | null
+        ingtfsstops: number | null
+    }> {
         const idN = parseInt(id)
         const logger = this.logger
         const mod = this
         return new Promise(function (resolve, reject) {
             db.all(
-                'select zid as id, zcounty as county, zname as name, zapikey as apikey, zapiid as apiid, zaltsbbid as altsbbid, zgo as go, zlimit as `limit` from ZTFCSTATIONMODEL where ZID = ?',
+                'select ' +
+                    'zid as id, ' +
+                    'zcounty as county, ' +
+                    'zname as name, ' +
+                    'zapikey as apikey, ' +
+                    'zapiid as apiid, ' +
+                    'zaltsbbid as altsbbid, ' +
+                    'zgo as go, ' +
+                    'zlimit as `limit`, ' +
+                    'zingtfsstops as ingtfsstops ' +
+                    'from ZTFCSTATIONMODEL where ZID = ?',
                 [idN],
                 async function (err, rows) {
                     if (err) {
@@ -82,6 +99,7 @@ export class DbService {
                                     id: idString,
                                     name: rows[0].name,
                                     limit: rows[0].limit,
+                                    ingtfsstops: rows[0].ingtfsstops,
                                 })
                             } else {
                                 resolve({
@@ -90,6 +108,7 @@ export class DbService {
                                     id: idString,
                                     name: rows[0].name,
                                     limit: rows[0].limit,
+                                    ingtfsstops: rows[0].ingtfsstops,
                                 })
                             }
                         } else {
@@ -99,6 +118,7 @@ export class DbService {
                                 name: idString,
                                 id: idString,
                                 limit: DEFAULT_DEPARTURES_LIMIT,
+                                ingtfsstops: 1, // if not found in DB, maybe it's a new
                             })
                         }
                     }

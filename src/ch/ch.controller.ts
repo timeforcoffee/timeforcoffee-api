@@ -15,39 +15,7 @@ import { Cache } from '../helpers/helpers.cache'
 import { OpentransportdataController } from '../opentransportdata/opentransportdata.controller'
 import { SlackService } from '../slack/slack.service'
 
-const NOTEXISTING_IDS = [
-    '65',
-    '66',
-    '72',
-    '8011065',
-    '82',
-    '8500364',
-    '8502664',
-    '8502665',
-    '8502667',
-    '8502668',
-    '8508652',
-    '8530117',
-    '8530216',
-    '8530647',
-    '8531165',
-    '8531332',
-    '8531339',
-    '8531345',
-    '8531392',
-    '8573851',
-    '8582138',
-    '8588742',
-    '8589565',
-    '8591026',
-    '8591055',
-    '8591095',
-    '8591388',
-    '8592439',
-    '8594932',
-    '8595033',
-    '8789023',
-]
+const NOTEXISTING_IDS = ['65', '66', '72', '8011065', '82']
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
 @Controller('')
@@ -106,7 +74,10 @@ export class ChController {
 
     async getData(id: string): Promise<DeparturesType | DeparturesError> {
         const api = await this.dbService.getApiKey(id)
-        if (NOTEXISTING_IDS.includes(id)) {
+        if (api.ingtfsstops === null) {
+            this.logger.warn(`${api.name} requested, but not in gtfs stops.`)
+        }
+        if (NOTEXISTING_IDS.includes(id) || api.ingtfsstops === null) {
             return {
                 meta: {
                     station_id: id,
