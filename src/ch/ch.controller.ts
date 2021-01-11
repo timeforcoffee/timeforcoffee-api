@@ -11,11 +11,27 @@ import { OUTPUT_DATE_FORMAT, stripId } from './ch.service'
 import { HelpersService } from '../helpers/helpers.service'
 import { OpendataController } from '../opendata/opendata.controller'
 import { SearchController } from '../search/search.controller'
-import { Cache } from '../helpers/helpers.cache'
+import { Cache, redisClient } from '../helpers/helpers.cache'
 import { OpentransportdataController } from '../opentransportdata/opentransportdata.controller'
 import { SlackService } from '../slack/slack.service'
 
-const NOTEXISTING_IDS = ['65', '66', '72', '8011065', '82']
+const NOTEXISTING_IDS = [
+    '1101390',
+    '65',
+    '66',
+    '72',
+    '8011065',
+    '82',
+    '8503069',
+    '8573174',
+    '8590676',
+    '8591055',
+    '8591069',
+    '8591139',
+    '8591288',
+    '8592439',
+    '8595033',
+]
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
 @Controller('')
@@ -42,6 +58,9 @@ export class ChController {
         if (!req.header('user-agent').includes('offee')) {
             //coffee or Coffee
             res.setHeader('Cache-Control', 'public, max-age=59')
+        }
+        if (redisClient && redisClient.connected) {
+            redisClient.set(`station:lastAccess:${id}`, new Date().toUTCString())
         }
 
         const data = await this.stationboardCached(id)
