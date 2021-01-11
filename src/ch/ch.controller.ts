@@ -60,7 +60,7 @@ export class ChController {
             res.setHeader('Cache-Control', 'public, max-age=59')
         }
         if (redisClient && redisClient.connected) {
-            redisClient.set(`station:lastAccess:${id}`, new Date().toUTCString())
+            redisClient.set(`station:lastAccess:${id}`, new Date().toISOString())
         }
 
         const data = await this.stationboardCached(id)

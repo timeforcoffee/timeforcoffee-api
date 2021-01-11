@@ -29,4 +29,26 @@ export class HelpersController {
             })
             .join('\n')
     }
+
+    @Get('stationlastaccess')
+    @Header('Content-Type', 'text/plain')
+    async stationlastaccess(): Promise<string> {
+        const keys: string[] = await new Promise(resolve =>
+            redisClient.keys('station:lastAccess:*', (err, keys) => resolve(keys)),
+        )
+        const values: { key: string; value: string }[] = []
+        for (let i = 0; i < keys.length; i++) {
+            const key: string = keys[i]
+            const value = await new Promise<string>(resolve =>
+                redisClient.get(key, (err, keys) => resolve(keys)),
+            )
+            values.push({ key, value })
+        }
+        return values
+            .map(value => {
+                const id = value.key.replace('station:lastAccess:', '')
+                return `UPDATE ZTFCSTATIONMODEL SET ZLASTACCESS = "${value.value}" WHERE ZID = ${id};`
+            })
+            .join('\n')
+    }
 }
