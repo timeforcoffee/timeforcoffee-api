@@ -18,6 +18,8 @@ import { SlackService } from '../slack/slack.service'
 const NOTEXISTING_IDS = [
     '104',
     '1101390',
+    '1100637',
+    '1101436',
     '65',
     '66',
     '72',

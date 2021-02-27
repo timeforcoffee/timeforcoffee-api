@@ -1,6 +1,6 @@
 FROM node:14-alpine as build
 
-RUN apk add sqlite
+RUN apk add sqlite 
 USER node
 RUN mkdir /home/node/tfc
 ADD package.json /home/node/tfc/package.json
