@@ -51,6 +51,8 @@ export class DbService {
     }> {
         const idN = parseInt(id)
         const logger = this.logger
+        // to lazy to figure out the following problem...
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const mod = this
         return new Promise(function (resolve, reject) {
             db.all(
