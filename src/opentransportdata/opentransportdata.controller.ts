@@ -1,9 +1,10 @@
 import { Controller, Get, Param } from '@nestjs/common'
 import { DEFAULT_DEPARTURES_LIMIT, HelpersService } from '../helpers/helpers.service'
 import { DeparturesError, DeparturesType } from '../ch/ch.type'
-import { stripId } from '../ch/ch.service'
+import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import { parseStringPromise } from 'xml2js'
 import { DbService } from '../db/db.service'
+import moment from 'moment-timezone'
 
 function mapType(type: string): string {
     switch (type) {
@@ -34,7 +35,6 @@ export class OpentransportdataController {
     ): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
         const limit = await this.helpersService.stationLimit(id, defaultLimit)
-
         const data = `<?xml version="1.0" encoding="UTF-8"?>
 <Trias version="1.1" xmlns="http://www.vdv.de/trias" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <ServiceRequest>
@@ -119,21 +119,42 @@ export class OpentransportdataController {
                 const lastCallArrival = lastCall['trias:CallAtStop'][0]['trias:ServiceArrival'][0]
                 return {
                     departure: {
-                        scheduled,
-                        realtime,
+                        scheduled: moment
+                            .tz(scheduled, OUTPUT_DATE_FORMAT, 'Europe/Zurich')
+                            .format(OUTPUT_DATE_FORMAT),
+                        realtime: realtime
+                            ? moment
+                                  .tz(realtime, OUTPUT_DATE_FORMAT, 'Europe/Zurich')
+                                  .format(OUTPUT_DATE_FORMAT)
+                            : undefined,
                     },
-                    dt: realtime || scheduled,
+                    dt: moment
+                        .tz(realtime || scheduled, OUTPUT_DATE_FORMAT, 'Europe/Zurich')
+                        .format(OUTPUT_DATE_FORMAT),
                     id: service['trias:DestinationStopPointRef'][0],
                     to: service['trias:DestinationText'][0]['trias:Text'][0],
-                    accessible: null, // TODO, it's in the xml
+                    accessible: false, // TODO, it's in the xml
                     name: mapName(service['trias:PublishedLineName'][0]['trias:Text'][0]),
                     type: mapType(service['trias:Mode'][0]['trias:PtMode'][0]),
                     source: 'otd',
+                    colors: { fg: '#000000', bg: '#ffffff' },
                     arrival: {
-                        scheduled: lastCallArrival['trias:TimetabledTime'][0],
+                        scheduled: moment
+                            .tz(
+                                lastCallArrival['trias:TimetabledTime'][0],
+                                OUTPUT_DATE_FORMAT,
+                                'Europe/Zurich',
+                            )
+                            .format(OUTPUT_DATE_FORMAT),
                         realtime: lastCallArrival['trias:EstimatedTime']
-                            ? lastCallArrival['trias:EstimatedTime'][0]
-                            : undefined,
+                            ? moment
+                                  .tz(
+                                      lastCallArrival['trias:EstimatedTime'][0],
+                                      OUTPUT_DATE_FORMAT,
+                                      'Europe/Zurich',
+                                  )
+                                  .format(OUTPUT_DATE_FORMAT)
+                            : null,
                     },
                     platform: callAtStop['EstimatedBay']
                         ? callAtStop['trias:EstimatedBay'][0]['trias:Text'][0]

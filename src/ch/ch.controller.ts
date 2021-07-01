@@ -145,6 +145,9 @@ export class ChController {
                     api.limit,
                 )
                 break
+            case 'otdOnly':
+                result = await this.otdController.stationboard(api.id, api.limit)
+                break
 
             default:
                 result = this.checkForError(
