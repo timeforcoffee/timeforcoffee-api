@@ -17,26 +17,31 @@ import { SlackService } from '../slack/slack.service'
 
 const NOTEXISTING_IDS = [
     '104',
-    '1101390',
     '1100637',
+    '1101390',
     '1101436',
+    '1322047',
+    '1322072',
     '65',
     '66',
     '72',
     '8011065',
     '82',
+    '8302593',
     '8503069',
+    '8503600',
     '8573174',
     '8576166',
     '8577019',
+    '8583794',
+    '8590397',
+    '8590535',
     '8590676',
     '8591055',
     '8591069',
     '8591139',
     '8591288',
     '8592439',
-    '8590397',
-    '8583794',
     '8595033',
 ]
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
@@ -103,7 +108,7 @@ export class ChController {
         if (api.ingtfsstops === null) {
             this.logger.warn(`${api.name} requested, but not in gtfs stops.`)
         }
-        if (NOTEXISTING_IDS.includes(id) || api.ingtfsstops === null) {
+        if (NOTEXISTING_IDS.includes(id) || api.ingtfsstops === null || id === 'NaN') {
             return {
                 meta: {
                     station_id: id,
