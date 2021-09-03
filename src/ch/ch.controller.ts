@@ -43,6 +43,9 @@ const NOTEXISTING_IDS = [
     '8591288',
     '8592439',
     '8595033',
+    '8774330',
+    '8772584',
+    '8581770',
 ]
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 

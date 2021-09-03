@@ -74,7 +74,7 @@ export const Cache = ({ key, ttl }: CacheArgs = { ttl: 500 }) => {
                 const cacheStore = currentStoreType === 'redis' ? clusterStore : memoryStore
 
                 const argsKey = `${key}/${JSON.stringify(args)}`
-                const cachedValue = await cacheStore.get(argsKey)
+                const cachedValue = (await cacheStore.get(argsKey)) as string
                 // prevents cache stompeding
                 if (cachedValue === '__caching__') {
                     await delay(100)
