@@ -30,9 +30,11 @@ const NOTEXISTING_IDS = [
     '8302593',
     '8503069',
     '8503600',
+    '8508050',
     '8573174',
     '8576166',
     '8577019',
+    '8581770',
     '8583794',
     '8590397',
     '8590535',
@@ -43,9 +45,8 @@ const NOTEXISTING_IDS = [
     '8591288',
     '8592439',
     '8595033',
-    '8774330',
     '8772584',
-    '8581770',
+    '8774330',
 ]
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
@@ -238,16 +239,12 @@ export class ChController {
         limit: number | null,
     ): Promise<DeparturesType | DeparturesError> {
         const responses: (DeparturesType | DeparturesError)[] = await Promise.all([
-            this.zvvController.stationboard(id, limit).catch(
-                (e): DeparturesError => {
-                    return { error: e.message, source: 'zvv' }
-                },
-            ),
-            stationboardPromise.catch(
-                (e): DeparturesError => {
-                    return { error: e.message, source: apikey }
-                },
-            ),
+            this.zvvController.stationboard(id, limit).catch((e): DeparturesError => {
+                return { error: e.message, source: 'zvv' }
+            }),
+            stationboardPromise.catch((e): DeparturesError => {
+                return { error: e.message, source: apikey }
+            }),
         ])
 
         //FIXME: Fallback to OTD, if both failed...
