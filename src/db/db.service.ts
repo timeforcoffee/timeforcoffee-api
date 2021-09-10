@@ -39,9 +39,7 @@ export class DbService {
         return id
     }
 
-    async getApiKey(
-        id: string,
-    ): Promise<{
+    async getApiKey(id: string): Promise<{
         apikey: string
         apiid: string
         name: string

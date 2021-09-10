@@ -89,8 +89,9 @@ export class OpentransportdataController {
                 }
             }
             return {
-                error:
-                    stopEventResponse['trias:ErrorMessage']?.[0]['trias:Text'][0]['trias:Text'][0],
+                error: stopEventResponse['trias:ErrorMessage']?.[0]['trias:Text'][0][
+                    'trias:Text'
+                ][0],
                 source: 'otd',
             }
         }
