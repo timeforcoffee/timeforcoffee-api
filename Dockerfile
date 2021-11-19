@@ -1,6 +1,6 @@
 FROM node:16-alpine as build
 
-RUN apk add sqlite 
+RUN apk add sqlite
 USER node
 RUN mkdir /home/node/tfc
 ADD package.json /home/node/tfc/package.json
@@ -26,6 +26,7 @@ RUN rm -rf node_modules/luhn-generator/update
 
 
 FROM node:16-alpine
+RUN set -x && apk update && apk upgrade && apk add --no-cache bind-tools 
 COPY --from=build /home/node/tfc/node_modules /home/node/tfc/node_modules
 COPY --from=build /home/node/tfc/stations.sqlite /home/node/tfc/dist/
 COPY --from=build /home/node/tfc/dist /home/node/tfc/dist
