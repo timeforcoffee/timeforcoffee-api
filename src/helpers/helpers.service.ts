@@ -3,6 +3,7 @@ import axios, { AxiosRequestConfig } from 'axios'
 import { SlackService } from '../slack/slack.service'
 import { stripId } from '../ch/ch.service'
 import { redisClient } from './helpers.cache'
+import os from 'os'
 
 export const DEFAULT_DEPARTURES_LIMIT = 20
 @Injectable()
@@ -18,7 +19,7 @@ export class HelpersService {
             this.logger.log(`Got ${url} - Took ${(curTime - startTime) / 1000} sec`)
             return response.data
         } catch (e) {
-            this.logger.warn(`${url} threw an error, ${e.message}`)
+            this.logger.warn(`${url} threw an error, ${e.message} on ${os.hostname()}`)
             return { error: e.message, source: url }
         }
     }
@@ -40,7 +41,7 @@ export class HelpersService {
             this.logger.log(`Got ${url} - Took ${(curTime - startTime) / 1000} sec`)
             return response.data
         } catch (e) {
-            const messsage = `${url} threw an error, ${e.message}`
+            const messsage = `${url} threw an error, ${e.message} on ${os.hostname()}`
             this.logger.error(messsage)
             this.slackService.sendAlert({ text: messsage }, 'callApiPost')
             return { error: e.message, source: url }

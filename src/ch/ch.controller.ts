@@ -14,6 +14,7 @@ import { SearchController } from '../search/search.controller'
 import { Cache, redisClient } from '../helpers/helpers.cache'
 import { OpentransportdataController } from '../opentransportdata/opentransportdata.controller'
 import { SlackService } from '../slack/slack.service'
+import os from 'os'
 
 const NOTEXISTING_IDS = [
     '104',
@@ -166,7 +167,9 @@ export class ChController {
                     api.name,
                 )
                 if ('error' in result) {
-                    const message = `zvv failed for ${api.id}, fall back to search. ${result.error}`
+                    const message = `zvv failed for ${api.id}, fall back to search. ${
+                        result.error
+                    } on ${os.hostname()}`
                     this.logger.error(message)
                     this.slackService.sendAlert({ text: message }, 'zvvFail')
 
@@ -177,7 +180,9 @@ export class ChController {
                     )
                 }
                 if ('error' in result) {
-                    const message = `search failed for ${api.id}, fall back to otd. ${result.error}`
+                    const message = `search failed for ${api.id}, fall back to otd. ${
+                        result.error
+                    } on ${os.hostname()}`
                     this.logger.error(message)
                     this.slackService.sendAlert({ text: message }, 'searchFail')
                     result = await this.checkForError(
