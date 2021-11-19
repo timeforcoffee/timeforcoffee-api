@@ -28,6 +28,14 @@ spec:
           env:
             - name: MASTER
               value: "true"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/controlplane
+                    operator: DoesNotExist
 ---
 apiVersion: v1
 kind: Service
