@@ -1,4 +1,4 @@
-FROM node:14-alpine as build
+FROM node:16-alpine as build
 
 RUN apk add sqlite 
 USER node
@@ -25,7 +25,7 @@ RUN yarn install --prod
 RUN rm -rf node_modules/luhn-generator/update
 
 
-FROM node:14-alpine
+FROM node:16-alpine
 COPY --from=build /home/node/tfc/node_modules /home/node/tfc/node_modules
 COPY --from=build /home/node/tfc/stations.sqlite /home/node/tfc/dist/
 COPY --from=build /home/node/tfc/dist /home/node/tfc/dist
