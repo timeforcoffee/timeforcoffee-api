@@ -66,7 +66,10 @@ spec:
           successThreshold: 1
           timeoutSeconds: 2
         imagePullPolicy: Always
-
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
       restartPolicy: Always
       imagePullSecrets:
         - name: regcred

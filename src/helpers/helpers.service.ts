@@ -14,7 +14,7 @@ export class HelpersService {
         const startTime = +new Date()
 
         try {
-            const response = await axios.get(url, { timeout: 5000 })
+            const response = await axios.get(url, { timeout: 6000 })
             const curTime = new Date().getTime()
             this.logger.log(`Got ${url} - Took ${(curTime - startTime) / 1000} sec`)
             return response.data
