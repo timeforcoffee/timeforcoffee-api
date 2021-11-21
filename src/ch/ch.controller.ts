@@ -171,8 +171,10 @@ export class ChController {
                         result.error
                     } on ${os.hostname()}`
                     this.logger.error(message)
-                    this.slackService.sendAlert({ text: message }, 'zvvFail')
-
+                    // don't report EAI_AGAIN errors to slack, it got annoying
+                    if (!result.error.includes('EAI_AGAIN')) {
+                        this.slackService.sendAlert({ text: message }, 'zvvFail')
+                    }
                     result = await this.checkForError(
                         await this.searchController.stationboard(api.id, api.limit),
                         api.id,
