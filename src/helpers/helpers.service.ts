@@ -19,7 +19,7 @@ export class HelpersService {
             this.logger.log(`Got ${url} - Took ${(curTime - startTime) / 1000} sec`)
             return response.data
         } catch (e) {
-            this.logger.warn(`${url} threw an error, ${e.message} on ${os.hostname()}`)
+            this.logger.error(`${url} threw an error, ${e.message} on ${os.hostname()}`)
             return { error: e.message, source: url }
         }
     }
