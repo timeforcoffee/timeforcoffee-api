@@ -16,7 +16,17 @@ import { OpentransportdataController } from '../opentransportdata/opentransportd
 import { SlackService } from '../slack/slack.service'
 import os from 'os'
 
-const NOTEXISTING_IDS = ['8530472']
+const NOTEXISTING_IDS = [
+    '65',
+    '8530472',
+    '8595033',
+    '8503600',
+    '8583794',
+    '8753365',
+    '8753363',
+    '8770014',
+    '89',
+]
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
 @Controller('')
