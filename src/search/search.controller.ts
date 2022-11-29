@@ -63,12 +63,13 @@ export class SearchController {
             meta: { station_id: id, station_name: data.stop.name },
             departures: data.connections
                 ? data.connections.map((connection): DepartureType => {
+                      //console.log(connection.dep_delay)
                       const scheduled = getTimeFormatted(connection.time)
                       const realtime = connection.dep_delay
                           ? getTime(connection.time)
                                 ?.add(connection.dep_delay, 'minutes')
                                 .format(OUTPUT_DATE_FORMAT)
-                          : null
+                          : getTimeFormatted(connection.time)
                       return {
                           id: connection.terminal.id,
                           type: connection.type,

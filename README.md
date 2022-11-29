@@ -14,6 +14,8 @@ $ npm install
 ## Running the app
 
 ```bash
+
+docker   run -p 6455:6379 --rm -d redis:6-alpine
 # development
 $ npm run start
 
