@@ -17,20 +17,29 @@ import { SlackService } from '../slack/slack.service'
 import os from 'os'
 
 const NOTEXISTING_IDS = [
+    '1101436',
+    '1101514',
+    '1322045',
     '65',
+    '8502508',
+    '8503600',
+    '8530472',
+    '8583794',
+    '8589565',
+    '8587742',
+    '8590507',
     '8591055',
     '8591069',
-    '8530472',
     '8595033',
-    '8503600',
-    '8583794',
-    '8753365',
-    '8753363',
-    '8770014',
     '8714414',
-    '8587742',
+    '8721410',
+    '8753363',
+    '8753365',
+    '8753433',
+    '8770014',
     '89',
 ]
+
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
 
 @Controller('')
