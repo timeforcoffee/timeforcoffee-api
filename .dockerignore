@@ -2,3 +2,4 @@
 /dist
 /Dockerfile
 .git
+.idea
