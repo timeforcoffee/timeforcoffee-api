@@ -17,27 +17,41 @@ import { SlackService } from '../slack/slack.service'
 import os from 'os'
 
 const NOTEXISTING_IDS = [
+    '65',
+    '89',
     '1101436',
     '1101514',
+    '1200082',
+    '1200219',
+    '1300111',
+    '1322029',
     '1322045',
-    '65',
+    '8502052',
     '8502075',
     '8502508',
+    '8503069',
     '8503600',
     '8505435',
+    '8505437',
     '8505438',
+    '8506370',
     '8530472',
-    '8583575',
     '8580154',
+    '8325369',
+    '8583575',
     '8583794',
     '8587742',
+    '8589157',
     '8589424',
     '8589565',
+    '8590218',
     '8590507',
+    '8590535',
     '8591055',
     '8591069',
     '8591288',
     '8595033',
+    '8595555',
     '8714414',
     '8721410',
     '8753363',
@@ -45,7 +59,6 @@ const NOTEXISTING_IDS = [
     '8753433',
     '8770014',
     '8771300',
-    '89',
 ]
 
 const connectionsBaseUrl = 'http://transport.opendata.ch/v1/connections?limit=5&direct=1&'
@@ -112,7 +125,7 @@ export class ChController {
         if (api.ingtfsstops === null) {
             this.logger.warn(`${api.name} requested, but not in gtfs stops.`)
         }
-        if (NOTEXISTING_IDS.includes(id) || api.ingtfsstops === null || id === 'NaN') {
+        if (api.ingtfsstops === null || id === 'NaN') {
             return {
                 meta: {
                     station_id: id,
@@ -123,24 +136,6 @@ export class ChController {
         }
         let result: DeparturesType | DeparturesError = null
         switch (api.apikey) {
-            case 'ost':
-                result = await this.combine(
-                    api.id,
-                    this.ostController.stationboard(api.apiid),
-                    api.apikey,
-                    api.name,
-                    api.limit,
-                )
-                break
-            case 'blt':
-                result = await this.combine(
-                    api.id,
-                    this.bltController.stationboard(api.apiid),
-                    api.apikey,
-                    api.name,
-                    api.limit,
-                )
-                break
             case 'odp':
             case 'vbl':
             case 'bvb':
@@ -225,10 +220,12 @@ export class ChController {
     ): DeparturesType | DeparturesError {
         if ('error' in response && response.code === 'NOTFOUND') {
             this.logger.warn(`${stationName} not found in backends`)
-            this.slackService.sendAlert(
-                { text: `${stationName} ${id} not found in backends` },
-                'notFound',
-            )
+            if (!NOTEXISTING_IDS.includes(id)) {
+                this.slackService.sendAlert(
+                    { text: `${stationName} ${id} not found in backends` },
+                    'notFound',
+                )
+            }
             return {
                 meta: { station_id: id, station_name: `${stationName}. Station not found` },
                 departures: [],
