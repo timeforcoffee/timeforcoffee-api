@@ -8,8 +8,23 @@ import { OUTPUT_DATE_FORMAT, stripId } from '../ch/ch.service'
 import { DEFAULT_DEPARTURES_LIMIT, HelpersService } from '../helpers/helpers.service'
 import { Cache } from '../helpers/helpers.cache'
 
-const stationBaseUrl =
-    'http://online.fahrplan.zvv.ch/bin/stboard.exe/dny?dirInput=&boardType=dep&start=1&tpl=stbResult2json&input='
+const stationBaseUrl = 'https://zvv.hafas.cloud/restproxy/departureBoard'
+
+const buildUrl = (id: string, limit: string, datetimeObj: Moment): string => {
+    const params = new URLSearchParams({
+        format: 'json',
+        accessId: 'OFPubique',
+        type: 'DEP_STATION',
+        duration: '1439',
+        id: id,
+        date: datetimeObj.format('YYYY-MM-DD'),
+        time: datetimeObj.format('HH:mm'),
+        passlist: '1',
+        maxJourneys: limit,
+        baim: '1',
+    })
+    return `${stationBaseUrl}?${params.toString()}`
+}
 
 const sanitizeLine = (line: string): string => {
     line = decode(line)
@@ -24,34 +39,37 @@ const sanitizeLine = (line: string): string => {
         .replace(/ +/, ' ')
 }
 
-const getDateTime = (input: { date: string; time: string }): Moment | null => {
-    if (input && input.date && input.time) {
-        return moment.tz(input.date + ' ' + input.time, 'DD.MM.YYYY HH:mm', 'Europe/Zurich')
+const getDateTime = (date: string, time: string): Moment | null => {
+    if (date && time) {
+        return moment.tz(`${date} ${time}`, 'YYYY-MM-DD HH:mm:ss', 'Europe/Zurich')
     }
     return null
 }
-const getFormattedDateTime = (input: { date: string; time: string }): string | null => {
-    return getDateTime(input)?.format(OUTPUT_DATE_FORMAT)
+const getFormattedDateTime = (date: string, time: string): string | null => {
+    return getDateTime(date, time)?.format(OUTPUT_DATE_FORMAT)
 }
 
-const mapType = (type: string): string => {
-    switch (type) {
-        case 'icon_tram':
+const mapType = (catOut: string): string => {
+    const cat = catOut?.toLowerCase()
+    switch (cat) {
+        case 'tram':
             return 'tram'
-        case 'icon_bus':
+        case 'bus':
             return 'bus'
-        case 'icon_boat':
+        case 'bat':
+        case 'boat':
             return 'boat'
         default:
             return 'train'
     }
 }
 
-const hasAccessible = (code?: string): boolean => {
-    if (!code) {
+const hasAccessible = (notes?: { key?: string; value?: string }[]): boolean => {
+    if (!notes || !Array.isArray(notes)) {
         return false
     }
-    return code.includes('NF') || code.includes('6') || code.includes('9')
+    // baim notes indicate accessibility info is available
+    return notes.some(note => note.key?.startsWith('baim'))
 }
 
 @Controller('/api/zvv/')
@@ -59,38 +77,61 @@ export class ZvvController {
     constructor(private dbService: DbService, private helpersService: HelpersService) {}
     private readonly logger = new Logger(ZvvController.name)
 
-    getDeparture = async (connection: {
-        product: any
-        mainLocation: any
-        locations: string | any[]
-        attributes_bfr: { code: string }[]
+    getDeparture = async (departure: {
+        ProductAtStop: {
+            name: string
+            catOut: string
+            icon?: { foregroundColor?: { hex: string }; backgroundColor?: { hex: string } }
+        }
+        direction: string
+        date: string
+        time: string
+        rtDate?: string
+        rtTime?: string
+        depPlatform?: string
+        rtDepPlatform?: string
+        Stops?: { Stop?: any[] }
+        Notes?: { Note?: { key?: string; value?: string }[] }
     }): Promise<DepartureType> => {
-        const product = connection.product
-        const mainLocation = connection.mainLocation
-        const lastLocation =
-            connection.locations.length > 0
-                ? connection.locations[connection.locations.length - 1]
+        const product = departure.ProductAtStop
+        const stops = departure.Stops?.Stop || []
+        const lastStop = stops.length > 0 ? stops[stops.length - 1] : null
+
+        const scheduled = getFormattedDateTime(departure.date, departure.time)
+        const realtime =
+            departure.rtDate && departure.rtTime
+                ? getFormattedDateTime(departure.rtDate, departure.rtTime)
                 : null
-        const scheduled = getFormattedDateTime(mainLocation)
-        const realtime = getFormattedDateTime(mainLocation.realTime) || null
+
+        const arrivalScheduled = lastStop
+            ? getFormattedDateTime(lastStop.arrDate, lastStop.arrTime)
+            : null
+        const arrivalRealtime =
+            lastStop?.rtArrDate && lastStop?.rtArrTime
+                ? getFormattedDateTime(lastStop.rtArrDate, lastStop.rtArrTime)
+                : undefined
+
         return {
             departure: {
                 scheduled,
                 realtime,
             },
             arrival: {
-                scheduled: getFormattedDateTime(lastLocation),
-                realtime: getFormattedDateTime(lastLocation.realTime) || undefined,
+                scheduled: arrivalScheduled,
+                realtime: arrivalRealtime,
             },
-            type: mapType(product.icon),
+            type: mapType(product.catOut),
             name: sanitizeLine(product.name),
             dt: realtime || scheduled,
-            colors: { fg: '#' + product.color?.fg, bg: '#' + product.color?.bg },
+            colors: {
+                fg: product.icon?.foregroundColor?.hex || '#000000',
+                bg: product.icon?.backgroundColor?.hex || '#ffffff',
+            },
             source: 'zvv',
-            id: await this.dbService.zvvToSbbId(lastLocation.location?.id),
-            accessible: hasAccessible(connection.attributes_bfr?.[0]?.code) || false,
-            platform: mainLocation.platform || null,
-            to: decode(product.direction),
+            id: await this.dbService.zvvToSbbId(lastStop?.extId),
+            accessible: hasAccessible(departure.Notes?.Note),
+            platform: departure.rtDepPlatform || departure.depPlatform || null,
+            to: decode(departure.direction),
         }
     }
     @Get('stationboard/:id')
@@ -101,21 +142,39 @@ export class ZvvController {
     ): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
         const limit = await this.helpersService.stationLimit(id, defaultLimit)
-        const url = `${stationBaseUrl}${id}&maxJourneys=${limit}`
+        const datetimeObj = moment.tz('Europe/Zurich')
+        const url = buildUrl(id, limit, datetimeObj)
 
         const data = await this.helpersService.callApi(url)
         if (data.error) {
             return data
         }
 
-        if (!data.station || !data.connections) {
+        if (!data.Departure || !Array.isArray(data.Departure)) {
+            // Check if it's an error response or empty
+            if (data.errorCode || data.errorText) {
+                return {
+                    error: `Station ${id} not found in backend`,
+                    source: url,
+                    code: 'NOTFOUND',
+                }
+            }
             return { error: 'Wrong data format from data provider' }
         }
-        if (data.station.name === '') {
-            return { error: `Station ${id} not found in backend`, source: url, code: 'NOTFOUND' }
+
+        const departures = await this.getConnections(data.Departure as any[])
+
+        // Get station name from first departure's first stop, or fallback to DB
+        let stationName = ''
+        if (data.Departure.length > 0) {
+            const firstStop = data.Departure[0].Stops?.Stop?.[0]
+            stationName = firstStop?.name || ''
+        }
+        if (!stationName) {
+            const stationInfo = await this.dbService.getApiKey(id)
+            stationName = stationInfo.name
         }
 
-        const departures = await this.getConnections(data.connections as any[])
         if (departures.length > 0) {
             const lastScheduled = moment(departures[departures.length - 1].departure.scheduled)
             const firstScheduled = moment(departures[0].departure.scheduled)
@@ -137,7 +196,7 @@ export class ZvvController {
             }
         }
         return {
-            meta: { station_id: id, station_name: decode(data.station?.name) },
+            meta: { station_id: id, station_name: decode(stationName) },
             departures,
         }
     }
@@ -152,9 +211,7 @@ export class ZvvController {
         id = stripId(id)
         const datetimeObj = moment.tz(starttime, 'YYYY-MM-DDTHH:mm', 'Europe/Zurich')
         const limit = await this.helpersService.stationLimit(id)
-        const url = `${stationBaseUrl}${id}&maxJourneys=${limit}&date=${datetimeObj.format(
-            'DD.MM.YY',
-        )}&time=${datetimeObj.format('HH:mm')}`
+        const url = buildUrl(id, limit, datetimeObj)
 
         // set limit to 100, if someone got until here, makes sense to just deliver some more stations
         // in the first request later
@@ -188,13 +245,31 @@ export class ZvvController {
         if (data.error) {
             return data
         }
-        if (!data.station || !data.connections) {
+        if (!data.Departure || !Array.isArray(data.Departure)) {
+            if (data.errorCode || data.errorText) {
+                return {
+                    error: `Station ${id} not found in backend`,
+                    source: url,
+                    code: 'NOTFOUND',
+                }
+            }
             return { error: 'Wrong data format from data provider' }
         }
 
+        // Get station name from first departure's first stop, or fallback to DB
+        let stationName = ''
+        if (data.Departure.length > 0) {
+            const firstStop = data.Departure[0].Stops?.Stop?.[0]
+            stationName = firstStop?.name || ''
+        }
+        if (!stationName) {
+            const stationInfo = await this.dbService.getApiKey(id)
+            stationName = stationInfo.name
+        }
+
         return {
-            meta: { station_id: id, station_name: decode(data.station.name) },
-            departures: await this.getConnections(data.connections as any[]),
+            meta: { station_id: id, station_name: decode(stationName) },
+            departures: await this.getConnections(data.Departure as any[]),
         }
     }
 
