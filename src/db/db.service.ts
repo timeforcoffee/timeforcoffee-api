@@ -2,6 +2,22 @@ import { Injectable, Logger } from '@nestjs/common'
 import * as sqlite3 from 'sqlite3'
 import { DEFAULT_DEPARTURES_LIMIT } from '../helpers/helpers.service'
 
+interface ZvvToSbbRow {
+    sbb_id: string
+}
+
+interface StationRow {
+    id: string
+    county: string
+    name: string
+    apikey: string
+    apiid: string
+    altsbbid: string
+    go: string
+    limit: number | null
+    ingtfsstops: number | null
+}
+
 const db = new sqlite3.Database('./stations.sqlite', sqlite3.OPEN_READONLY, err => {
     if (err) {
         console.error(err.message)
@@ -19,7 +35,7 @@ export class DbService {
         const idN = parseInt(id)
         if (idN < 300000 && idN > 290000) {
             return new Promise(function (resolve, reject) {
-                db.all(
+                db.all<ZvvToSbbRow>(
                     'select sbb_id from zvv_to_sbb where zvv_id = ?',
                     [id],
                     function (err, rows) {
@@ -53,7 +69,7 @@ export class DbService {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const mod = this
         return new Promise(function (resolve, reject) {
-            db.all(
+            db.all<StationRow>(
                 'select ' +
                     'zid as id, ' +
                     'zcounty as county, ' +
