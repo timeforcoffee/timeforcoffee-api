@@ -3,10 +3,9 @@ FROM node:18-alpine as build
 RUN apk add sqlite
 USER node
 RUN mkdir /home/node/tfc
-ADD package.json /home/node/tfc/package.json
-ADD yarn.lock /home/node/tfc/
 WORKDIR /home/node/tfc
-RUN yarn install
+COPY --chown=node:node package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
 USER root
 RUN chown node /home/node/tfc
 USER node
