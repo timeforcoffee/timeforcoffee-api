@@ -88,8 +88,9 @@ export class ZvvController {
         time: string
         rtDate?: string
         rtTime?: string
-        depPlatform?: string
-        rtDepPlatform?: string
+        track?: string
+        rtTrack?: string
+        platform?: { type: string; text: string }
         Stops?: { Stop?: any[] }
         Notes?: { Note?: { key?: string; value?: string }[] }
     }): Promise<DepartureType> => {
@@ -111,6 +112,10 @@ export class ZvvController {
                 ? getFormattedDateTime(lastStop.rtArrDate, lastStop.rtArrTime)
                 : undefined
 
+        // Platform can be in rtTrack, track, or platform.text - strip "Gl. " prefix
+        const rawPlatform = departure.rtTrack || departure.track || departure.platform?.text || null
+        const platform = rawPlatform?.replace(/^Gl\.\s*/, '') || null
+
         return {
             departure: {
                 scheduled,
@@ -130,7 +135,7 @@ export class ZvvController {
             source: 'zvv',
             id: await this.dbService.zvvToSbbId(lastStop?.extId),
             accessible: hasAccessible(departure.Notes?.Note),
-            platform: departure.rtDepPlatform || departure.depPlatform || null,
+            platform,
             to: decode(departure.direction),
         }
     }
