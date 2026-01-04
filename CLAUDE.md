@@ -41,7 +41,7 @@ docker run -p 6455:6379 --rm -d redis:6-alpine  # Start Redis
 ### Key Modules
 
 - **ch/**: Main controller orchestrating stationboard requests with multi-backend fallback logic
-- **zvv/**: ZVV API integration (primary for Zürich region)
+- **zvv/**: ZVV HAFAS API integration (primary for Zürich region, uses `zvv.hafas.cloud`)
 - **search/**: search.ch API integration (fallback, provides accessibility info)
 - **opentransportdata/**: OTD API integration (secondary fallback)
 - **db/**: SQLite service for station metadata and API routing decisions
