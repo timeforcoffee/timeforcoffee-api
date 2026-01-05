@@ -29,6 +29,7 @@ export class AppLoggerMiddleware implements NestMiddleware {
     use(request: Request, response: Response, next: NextFunction): void {
         const { method, originalUrl: url } = request
         const userAgent = request.get('user-agent') || '-'
+        const tfcId = request.get('TFCID') || '-'
 
         const startTime = +new Date()
         const remoteAddr = request.get('x-real-ip') || '-'
@@ -39,7 +40,7 @@ export class AppLoggerMiddleware implements NestMiddleware {
                 this.logger.log(
                     `${method} ${url} ${statusCode} ${
                         (curTime - startTime) / 1000
-                    } ${remoteAddr} ${userAgent.replace(/CFNetwork.*/, '')}`,
+                    } ${remoteAddr} ${tfcId} ${userAgent.replace(/CFNetwork.*/, '')}`,
                 )
             }
         })
