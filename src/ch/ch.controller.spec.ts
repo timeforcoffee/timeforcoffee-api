@@ -14,12 +14,17 @@ import { DeparturesType, DepartureType } from './ch.type'
 describe('ChController', () => {
     let controller: ChController
     let zvvController: jest.Mocked<ZvvController>
+    let searchController: jest.Mocked<SearchController>
+    let otdController: jest.Mocked<OpentransportdataController>
     let dbService: jest.Mocked<DbService>
+    let helpersService: jest.Mocked<HelpersService>
+    let slackService: jest.Mocked<SlackService>
 
     const createMockDeparture = (
         scheduled: string,
         realtime: string | null,
         name: string,
+        options: Partial<DepartureType> = {},
     ): DepartureType => ({
         dt: realtime || scheduled,
         accessible: false,
@@ -32,12 +37,21 @@ describe('ChController', () => {
         colors: { fg: '#000000', bg: '#ffffff' },
         platform: null,
         type: 'tram',
+        ...options,
     })
 
     beforeEach(async () => {
         const mockZvvController = {
             stationboard: jest.fn(),
             stationboardStarttime: jest.fn(),
+        }
+
+        const mockSearchController = {
+            stationboard: jest.fn(),
+        }
+
+        const mockOtdController = {
+            stationboard: jest.fn(),
         }
 
         const mockDbService = {
@@ -62,8 +76,8 @@ describe('ChController', () => {
                 { provide: OstController, useValue: {} },
                 { provide: BltController, useValue: {} },
                 { provide: OpendataController, useValue: {} },
-                { provide: SearchController, useValue: {} },
-                { provide: OpentransportdataController, useValue: {} },
+                { provide: SearchController, useValue: mockSearchController },
+                { provide: OpentransportdataController, useValue: mockOtdController },
                 { provide: DbService, useValue: mockDbService },
                 { provide: HelpersService, useValue: mockHelpersService },
                 { provide: SlackService, useValue: mockSlackService },
@@ -72,7 +86,11 @@ describe('ChController', () => {
 
         controller = module.get<ChController>(ChController)
         zvvController = module.get(ZvvController)
+        searchController = module.get(SearchController)
+        otdController = module.get(OpentransportdataController)
         dbService = module.get(DbService)
+        helpersService = module.get(HelpersService)
+        slackService = module.get(SlackService)
     })
 
     describe('getData', () => {
@@ -251,6 +269,472 @@ describe('ChController', () => {
             )
 
             expect('error' in result).toBe(true)
+        })
+    })
+
+    describe('fallback behavior', () => {
+        it('should fall back to search.ch when ZVV fails', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8591052',
+                apiid: '8591052',
+                name: 'Limmatplatz',
+                apikey: 'zvv',
+                ingtfsstops: 1,
+                limit: 40,
+            })
+
+            zvvController.stationboard.mockResolvedValue({
+                error: 'ZVV API error',
+                source: 'zvv',
+            })
+
+            const searchDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [createMockDeparture('2026-01-05T08:00:00', null, '32', { source: 'search' })],
+            }
+            searchController.stationboard.mockResolvedValue(searchDepartures)
+
+            const result = await controller.getData('8591052')
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures[0].source).toBe('search')
+            }
+        })
+
+        it('should fall back to OTD when both ZVV and search.ch fail', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8591052',
+                apiid: '8591052',
+                name: 'Limmatplatz',
+                apikey: 'zvv',
+                ingtfsstops: 1,
+                limit: 40,
+            })
+
+            zvvController.stationboard.mockResolvedValue({
+                error: 'ZVV API error',
+                source: 'zvv',
+            })
+
+            searchController.stationboard.mockResolvedValue({
+                error: 'Search API error',
+                source: 'search',
+            })
+
+            const otdDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [createMockDeparture('2026-01-05T08:00:00', null, '32', { source: 'otd' })],
+            }
+            otdController.stationboard.mockResolvedValue(otdDepartures)
+
+            const result = await controller.getData('8591052')
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures[0].source).toBe('otd')
+            }
+        })
+
+        it('should send Slack alert when ZVV fails', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8591052',
+                apiid: '8591052',
+                name: 'Limmatplatz',
+                apikey: 'zvv',
+                ingtfsstops: 1,
+                limit: 40,
+            })
+
+            zvvController.stationboard.mockResolvedValue({
+                error: 'Connection timeout',
+                source: 'zvv',
+            })
+
+            searchController.stationboard.mockResolvedValue({
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [],
+            })
+
+            await controller.getData('8591052')
+
+            expect(slackService.sendAlert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    text: expect.stringContaining('zvv failed'),
+                }),
+                'zvvFail',
+            )
+        })
+
+        it('should not send Slack alert for EAI_AGAIN errors', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8591052',
+                apiid: '8591052',
+                name: 'Limmatplatz',
+                apikey: 'zvv',
+                ingtfsstops: 1,
+                limit: 40,
+            })
+
+            zvvController.stationboard.mockResolvedValue({
+                error: 'getaddrinfo EAI_AGAIN',
+                source: 'zvv',
+            })
+
+            searchController.stationboard.mockResolvedValue({
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [],
+            })
+
+            await controller.getData('8591052')
+
+            expect(slackService.sendAlert).not.toHaveBeenCalledWith(
+                expect.anything(),
+                'zvvFail',
+            )
+        })
+    })
+
+    describe('checkForError', () => {
+        it('should return empty departures for NOTFOUND error', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8591052',
+                apiid: '8591052',
+                name: 'Limmatplatz',
+                apikey: 'zvv',
+                ingtfsstops: 1,
+                limit: 40,
+            })
+
+            zvvController.stationboard.mockResolvedValue({
+                error: 'Station not found',
+                code: 'NOTFOUND',
+            })
+
+            searchController.stationboard.mockResolvedValue({
+                error: 'Station not found',
+                code: 'NOTFOUND',
+            })
+
+            otdController.stationboard.mockResolvedValue({
+                error: 'Station not found',
+                code: 'NOTFOUND',
+            })
+
+            const result = await controller.getData('8591052')
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures).toEqual([])
+                expect(result.meta.station_name).toContain('not found')
+            }
+        })
+
+        it('should not send Slack alert for known non-existing IDs', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8591055', // In NOTEXISTING_IDS list
+                apiid: '8591055',
+                name: 'Test Station',
+                apikey: 'zvv',
+                ingtfsstops: 1,
+                limit: 40,
+            })
+
+            zvvController.stationboard.mockResolvedValue({
+                error: 'Station not found',
+                code: 'NOTFOUND',
+            })
+
+            searchController.stationboard.mockResolvedValue({
+                error: 'Station not found',
+                code: 'NOTFOUND',
+            })
+
+            otdController.stationboard.mockResolvedValue({
+                error: 'Station not found',
+                code: 'NOTFOUND',
+            })
+
+            await controller.getData('8591055')
+
+            expect(slackService.sendAlert).not.toHaveBeenCalledWith(
+                expect.anything(),
+                'notFound',
+            )
+        })
+    })
+
+    describe('combine', () => {
+        it('should merge ZVV and search.ch data', async () => {
+            const zvvDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32', {
+                        accessible: false,
+                        platform: null,
+                    }),
+                ],
+            }
+
+            const searchDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32', {
+                        accessible: true,
+                        platform: '1',
+                        source: 'search',
+                    }),
+                ],
+            }
+
+            zvvController.stationboard.mockResolvedValue(zvvDepartures)
+
+            const result = await controller.combine(
+                '8591052',
+                Promise.resolve(searchDepartures),
+                'search',
+                'Limmatplatz',
+                40,
+            )
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures[0].accessible).toBe(true)
+                expect(result.departures[0].platform).toBe('1')
+                expect(result.departures[0].source).toContain('accessible: search')
+            }
+        })
+
+        it('should use search.ch realtime when available', async () => {
+            const zvvDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32'),
+                ],
+            }
+
+            const searchDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', '2026-01-05T08:02:00', '32', {
+                        source: 'search',
+                    }),
+                ],
+            }
+
+            zvvController.stationboard.mockResolvedValue(zvvDepartures)
+
+            const result = await controller.combine(
+                '8591052',
+                Promise.resolve(searchDepartures),
+                'search',
+                'Limmatplatz',
+                40,
+            )
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures[0].departure.realtime).toBe('2026-01-05T08:02:00')
+            }
+        })
+
+        it('should use search.ch colors when ZVV has default colors', async () => {
+            const zvvDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32', {
+                        colors: { fg: '#000000', bg: '#ffffff' },
+                    }),
+                ],
+            }
+
+            const searchDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32', {
+                        colors: { fg: '#ffffff', bg: '#0000ff' },
+                        source: 'search',
+                    }),
+                ],
+            }
+
+            zvvController.stationboard.mockResolvedValue(zvvDepartures)
+
+            const result = await controller.combine(
+                '8591052',
+                Promise.resolve(searchDepartures),
+                'search',
+                'Limmatplatz',
+                40,
+            )
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures[0].colors.bg).toBe('#0000ff')
+            }
+        })
+
+        it('should fall back to search.ch when ZVV fails in combine', async () => {
+            zvvController.stationboard.mockResolvedValue({
+                error: 'ZVV error',
+                source: 'zvv',
+            })
+
+            const searchDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [createMockDeparture('2026-01-05T08:00:00', null, '32')],
+            }
+
+            const result = await controller.combine(
+                '8591052',
+                Promise.resolve(searchDepartures),
+                'search',
+                'Limmatplatz',
+                40,
+            )
+
+            expect('error' in result).toBe(false)
+        })
+
+        it('should fall back to ZVV when search.ch fails in combine', async () => {
+            const zvvDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [createMockDeparture('2026-01-05T08:00:00', null, '32')],
+            }
+
+            zvvController.stationboard.mockResolvedValue(zvvDepartures)
+
+            const result = await controller.combine(
+                '8591052',
+                Promise.reject(new Error('Search error')),
+                'search',
+                'Limmatplatz',
+                40,
+            )
+
+            expect('error' in result).toBe(false)
+        })
+
+        it('should mark unmatched departures as nomatch', async () => {
+            const zvvDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32'),
+                    createMockDeparture('2026-01-05T08:05:00', null, '51'),
+                ],
+            }
+
+            const searchDepartures: DeparturesType = {
+                meta: { station_id: '8591052', station_name: 'Limmatplatz' },
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32', { source: 'search' }),
+                    // 51 is missing - should be marked as nomatch
+                ],
+            }
+
+            zvvController.stationboard.mockResolvedValue(zvvDepartures)
+
+            const result = await controller.combine(
+                '8591052',
+                Promise.resolve(searchDepartures),
+                'search',
+                'Limmatplatz',
+                40,
+            )
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures[1].source).toContain('nomatch')
+            }
+        })
+    })
+
+    describe('apikey routing', () => {
+        it('should use otdOnly backend when apikey is otdOnly', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8507000',
+                apiid: '8507000',
+                name: 'Bern',
+                apikey: 'otdOnly',
+                ingtfsstops: 1,
+                limit: 50,
+            })
+
+            const otdDepartures: DeparturesType = {
+                meta: { station_id: '8507000', station_name: 'Bern' },
+                departures: [createMockDeparture('2026-01-05T08:00:00', null, 'IC', { source: 'otd' })],
+            }
+            otdController.stationboard.mockResolvedValue(otdDepartures)
+
+            const result = await controller.getData('8507000')
+
+            expect(otdController.stationboard).toHaveBeenCalled()
+            expect(zvvController.stationboard).not.toHaveBeenCalled()
+        })
+
+        it('should use combine for search apikey', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8507000',
+                apiid: '8507000',
+                name: 'Bern',
+                apikey: 'search',
+                ingtfsstops: 1,
+                limit: 50,
+            })
+
+            const zvvDepartures: DeparturesType = {
+                meta: { station_id: '8507000', station_name: 'Bern' },
+                departures: [],
+            }
+            zvvController.stationboard.mockResolvedValue(zvvDepartures)
+
+            const searchDepartures: DeparturesType = {
+                meta: { station_id: '8507000', station_name: 'Bern' },
+                departures: [createMockDeparture('2026-01-05T08:00:00', null, 'IC')],
+            }
+            searchController.stationboard.mockResolvedValue(searchDepartures)
+
+            await controller.getData('8507000')
+
+            expect(zvvController.stationboard).toHaveBeenCalled()
+            expect(searchController.stationboard).toHaveBeenCalled()
+        })
+
+        it('should return empty departures for stations not in gtfs', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: '8591052',
+                apiid: '8591052',
+                name: 'Old Station',
+                apikey: 'zvv',
+                ingtfsstops: null, // Not in GTFS
+                limit: 40,
+            })
+
+            const result = await controller.getData('8591052')
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures).toEqual([])
+                expect(result.meta.station_name).toContain('does not exist anymore')
+            }
+        })
+
+        it('should return empty departures for NaN station ID', async () => {
+            dbService.getApiKey.mockResolvedValue({
+                id: 'NaN',
+                apiid: 'NaN',
+                name: 'Invalid',
+                apikey: 'zvv',
+                ingtfsstops: 1,
+                limit: 40,
+            })
+
+            const result = await controller.getData('NaN')
+
+            expect('error' in result).toBe(false)
+            if (!('error' in result)) {
+                expect(result.departures).toEqual([])
+            }
         })
     })
 })
