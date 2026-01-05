@@ -1,4 +1,4 @@
-FROM node:18-alpine as build
+FROM node:18-alpine AS build
 
 RUN apk add sqlite
 USER node
@@ -34,4 +34,4 @@ RUN chown  node  /home/node/tfc/dist/
 WORKDIR /home/node/tfc/dist
 USER node
 
-CMD node main.js
+CMD ["node", "main.js"]
