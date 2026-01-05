@@ -75,7 +75,7 @@ export class SearchController {
                           type: connection.type,
                           colors: connection.type === 'strain' ? null : getColors(connection.color),
                           departure: { scheduled, realtime },
-                          dt: scheduled || realtime,
+                          dt: realtime || scheduled,
                           arrival: { scheduled: null },
                           accessible: null,
                           source: 'search',
