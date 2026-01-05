@@ -189,6 +189,12 @@ export class ChController {
         }
         if (result && !('error' in result)) {
             this.logCount(result, api.id)
+            // Sort departures by realtime (dt field) to ensure correct order when delays occur
+            result.departures.sort((a, b) => {
+                if (a.dt < b.dt) return -1
+                if (a.dt > b.dt) return 1
+                return 0
+            })
         }
         return result
     }
