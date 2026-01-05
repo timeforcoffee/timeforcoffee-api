@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2026-01-05]
+
+### Fixed
+
+- Fix departure sorting to use realtime instead of scheduled time, ensuring correct order in widget when trains have different delays
+
 ## [2026-01-04]
 
 ### Changed

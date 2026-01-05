@@ -405,6 +405,15 @@ export class ChController {
         @Param('id') id: string,
         @Param('starttime') starttime: string,
     ): Promise<DeparturesType | DeparturesError> {
-        return this.zvvController.stationboardStarttime(id, starttime)
+        const result = await this.zvvController.stationboardStarttime(id, starttime)
+        if (result && !('error' in result)) {
+            // Sort departures by realtime (dt field) to ensure correct order when delays occur
+            result.departures.sort((a, b) => {
+                if (a.dt < b.dt) return -1
+                if (a.dt > b.dt) return 1
+                return 0
+            })
+        }
+        return result
     }
 }
