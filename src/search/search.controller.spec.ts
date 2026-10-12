@@ -15,9 +15,7 @@ describe('SearchController', () => {
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [SearchController],
-            providers: [
-                { provide: HelpersService, useValue: mockHelpersService },
-            ],
+            providers: [{ provide: HelpersService, useValue: mockHelpersService }],
         }).compile()
 
         controller = module.get<SearchController>(SearchController)

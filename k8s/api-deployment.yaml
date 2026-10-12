@@ -35,9 +35,21 @@ spec:
       containers:
       - image: docker.gitlab.liip.ch/chregu/repo/tfc-api:latest
         name: tfc-api
-#        env:
-#        - name: SLACK_NOTIFICATION_URL
-#          value: "" # set this to the correct value...
+        env:
+        # Secret created out-of-band (not in git):
+        #   kubectl create secret generic tfc-api-secrets -n tfc \
+        #     --from-literal=helpers-token=... \
+        #     --from-literal=opentransportdata-token=...
+        - name: HELPERS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: tfc-api-secrets
+              key: helpers-token
+        - name: OPENTRANSPORTDATA_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: tfc-api-secrets
+              key: opentransportdata-token
         resources:
           requests:
             memory: "50Mi"

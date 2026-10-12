@@ -243,10 +243,7 @@ describe('ChController', () => {
 
             zvvController.stationboardStarttime.mockResolvedValue(mockDepartures)
 
-            const result = await controller.stationboardStarttime(
-                '8591052',
-                '2026-01-05T10:00',
-            )
+            const result = await controller.stationboardStarttime('8591052', '2026-01-05T10:00')
 
             expect('error' in result).toBe(false)
             if (!('error' in result)) {
@@ -263,10 +260,7 @@ describe('ChController', () => {
             })
 
             // Use different parameters to avoid cache hit from previous test
-            const result = await controller.stationboardStarttime(
-                '9999999',
-                '2026-01-05T11:00',
-            )
+            const result = await controller.stationboardStarttime('9999999', '2026-01-05T11:00')
 
             expect('error' in result).toBe(true)
         })
@@ -290,7 +284,9 @@ describe('ChController', () => {
 
             const searchDepartures: DeparturesType = {
                 meta: { station_id: '8591052', station_name: 'Limmatplatz' },
-                departures: [createMockDeparture('2026-01-05T08:00:00', null, '32', { source: 'search' })],
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32', { source: 'search' }),
+                ],
             }
             searchController.stationboard.mockResolvedValue(searchDepartures)
 
@@ -324,7 +320,9 @@ describe('ChController', () => {
 
             const otdDepartures: DeparturesType = {
                 meta: { station_id: '8591052', station_name: 'Limmatplatz' },
-                departures: [createMockDeparture('2026-01-05T08:00:00', null, '32', { source: 'otd' })],
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, '32', { source: 'otd' }),
+                ],
             }
             otdController.stationboard.mockResolvedValue(otdDepartures)
 
@@ -388,10 +386,7 @@ describe('ChController', () => {
 
             await controller.getData('8591052')
 
-            expect(slackService.sendAlert).not.toHaveBeenCalledWith(
-                expect.anything(),
-                'zvvFail',
-            )
+            expect(slackService.sendAlert).not.toHaveBeenCalledWith(expect.anything(), 'zvvFail')
         })
     })
 
@@ -457,10 +452,7 @@ describe('ChController', () => {
 
             await controller.getData('8591055')
 
-            expect(slackService.sendAlert).not.toHaveBeenCalledWith(
-                expect.anything(),
-                'notFound',
-            )
+            expect(slackService.sendAlert).not.toHaveBeenCalledWith(expect.anything(), 'notFound')
         })
     })
 
@@ -508,9 +500,7 @@ describe('ChController', () => {
         it('should use search.ch realtime when available', async () => {
             const zvvDepartures: DeparturesType = {
                 meta: { station_id: '8591052', station_name: 'Limmatplatz' },
-                departures: [
-                    createMockDeparture('2026-01-05T08:00:00', null, '32'),
-                ],
+                departures: [createMockDeparture('2026-01-05T08:00:00', null, '32')],
             }
 
             const searchDepartures: DeparturesType = {
@@ -662,7 +652,9 @@ describe('ChController', () => {
 
             const otdDepartures: DeparturesType = {
                 meta: { station_id: '8507000', station_name: 'Bern' },
-                departures: [createMockDeparture('2026-01-05T08:00:00', null, 'IC', { source: 'otd' })],
+                departures: [
+                    createMockDeparture('2026-01-05T08:00:00', null, 'IC', { source: 'otd' }),
+                ],
             }
             otdController.stationboard.mockResolvedValue(otdDepartures)
 
