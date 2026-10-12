@@ -55,7 +55,8 @@ export class AppLoggerMiddleware implements NestMiddleware {
     imports: [
         // Global per-IP rate limit (requires trust proxy, see main.ts, so the
         // client IP from x-forwarded-for is used rather than the nginx IP).
-        ThrottlerModule.forRoot({ ttl: 60, limit: 120 }),
+        // throttler v5: ttl is in milliseconds.
+        ThrottlerModule.forRoot([{ ttl: 60000, limit: 120 }]),
         StationsModule,
         DbModule,
         ZvvModule,
