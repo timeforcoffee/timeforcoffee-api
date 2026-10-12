@@ -250,6 +250,36 @@ describe('ZvvController', () => {
 
             expect(result.name).toBe('46')
         })
+
+        it('should remove Tram prefix and map Trm to tram', async () => {
+            const departure = {
+                ProductAtStop: { name: 'Tram 8', catOut: 'Trm' },
+                direction: 'Test',
+                date: '2026-01-05',
+                time: '08:00:00',
+                Stops: { Stop: [] },
+            }
+
+            const result = await controller.getDeparture(departure)
+
+            expect(result.name).toBe('8')
+            expect(result.type).toBe('tram')
+        })
+
+        it('should remove B prefix and map B to bus', async () => {
+            const departure = {
+                ProductAtStop: { name: 'B 19', catOut: 'B' },
+                direction: 'Test',
+                date: '2026-01-05',
+                time: '08:00:00',
+                Stops: { Stop: [] },
+            }
+
+            const result = await controller.getDeparture(departure)
+
+            expect(result.name).toBe('19')
+            expect(result.type).toBe('bus')
+        })
     })
 
     describe('mapType', () => {

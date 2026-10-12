@@ -71,3 +71,4 @@ docker run -p 6455:6379 --rm -d redis:6-alpine  # Start Redis
 - Date/time handling uses `moment-timezone` with Europe/Zurich timezone
 - Output date format constant: `OUTPUT_DATE_FORMAT` in `ch.service.ts`
 - `DEFAULT_DEPARTURES_LIMIT` controls how many departures to fetch per request
+- `ChController.combine()` merges ZVV and search.ch departures by `name + scheduled`. If the ZVV line names aren't stripped down to the bare number (`sanitizeLine` in `zvv.controller.ts`), nothing matches and the search.ch colors/realtime are lost for stations outside Zürich (e.g. Bern). HAFAS currently sends products as `"Tram 8"` (catOut `Trm`), `"B 19"` (catOut `B`) and `"Schiff"`.

@@ -36,6 +36,8 @@ const sanitizeLine = (line: string): string => {
         .replace(/Tro( )+/, '')
         .replace(/Trm( )+/, '')
         .replace(/Bus +/, '')
+        .replace(/^Tram +/, '')
+        .replace(/^B +/, '')
         .replace(/ +/, ' ')
 }
 
@@ -53,11 +55,14 @@ const mapType = (catOut: string): string => {
     const cat = catOut?.toLowerCase()
     switch (cat) {
         case 'tram':
+        case 'trm':
             return 'tram'
         case 'bus':
+        case 'b':
             return 'bus'
         case 'bat':
         case 'boat':
+        case 'schiff':
             return 'boat'
         default:
             return 'train'
