@@ -499,10 +499,7 @@ describe('ZvvController', () => {
                 ],
             })
 
-            const result = await controller.stationboardStarttime(
-                '8591052',
-                '2026-01-05T14:00',
-            )
+            const result = await controller.stationboardStarttime('8591052', '2026-01-05T14:00')
 
             expect('error' in result).toBe(false)
             if (!('error' in result)) {

@@ -39,9 +39,17 @@ describe('OpentransportdataController', () => {
                             </trias:StopPointName>
                             <trias:ServiceDeparture>
                                 <trias:TimetabledTime>${d.scheduled}</trias:TimetabledTime>
-                                ${d.realtime ? `<trias:EstimatedTime>${d.realtime}</trias:EstimatedTime>` : ''}
+                                ${
+                                    d.realtime
+                                        ? `<trias:EstimatedTime>${d.realtime}</trias:EstimatedTime>`
+                                        : ''
+                                }
                             </trias:ServiceDeparture>
-                            ${d.platform ? `<trias:PlannedBay><trias:Text>${d.platform}</trias:Text></trias:PlannedBay>` : ''}
+                            ${
+                                d.platform
+                                    ? `<trias:PlannedBay><trias:Text>${d.platform}</trias:Text></trias:PlannedBay>`
+                                    : ''
+                            }
                         </trias:CallAtStop>
                     </trias:ThisCall>
                     <trias:Service>
@@ -51,7 +59,9 @@ describe('OpentransportdataController', () => {
                         <trias:DestinationText>
                             <trias:Text>${d.destination}</trias:Text>
                         </trias:DestinationText>
-                        <trias:DestinationStopPointRef>${d.destinationId}</trias:DestinationStopPointRef>
+                        <trias:DestinationStopPointRef>${
+                            d.destinationId
+                        }</trias:DestinationStopPointRef>
                         <trias:Mode>
                             <trias:PtMode>${d.mode}</trias:PtMode>
                         </trias:Mode>
@@ -60,7 +70,11 @@ describe('OpentransportdataController', () => {
                         <trias:CallAtStop>
                             <trias:ServiceArrival>
                                 <trias:TimetabledTime>${d.arrivalScheduled}</trias:TimetabledTime>
-                                ${d.arrivalRealtime ? `<trias:EstimatedTime>${d.arrivalRealtime}</trias:EstimatedTime>` : ''}
+                                ${
+                                    d.arrivalRealtime
+                                        ? `<trias:EstimatedTime>${d.arrivalRealtime}</trias:EstimatedTime>`
+                                        : ''
+                                }
                             </trias:ServiceArrival>
                         </trias:CallAtStop>
                     </trias:OnwardCall>
@@ -82,6 +96,7 @@ describe('OpentransportdataController', () => {
     }
 
     beforeEach(async () => {
+        process.env.OPENTRANSPORTDATA_TOKEN = 'test-token'
         const mockHelpersService = {
             callApiPost: jest.fn(),
             stationLimit: jest.fn().mockResolvedValue('20'),

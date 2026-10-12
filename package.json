@@ -25,6 +25,7 @@
     "@nestjs/config": "2.2.0",
     "@nestjs/core": "^9.2.1",
     "@nestjs/platform-express": "^9.2.1",
+    "@nestjs/throttler": "^4.2.1",
     "@slack/webhook": "5.0.4",
     "@types/xml2js": "0.4.11",
     "axios": "^0.26.1",

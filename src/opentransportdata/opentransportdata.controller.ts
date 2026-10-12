@@ -34,6 +34,16 @@ export class OpentransportdataController {
         defaultLimit: number | null = DEFAULT_DEPARTURES_LIMIT,
     ): Promise<DeparturesType | DeparturesError> {
         id = stripId(id)
+        // id is interpolated into the TRIAS XML request body; only allow plain
+        // integer station ids so nothing can break out of the XML element.
+        if (!/^\d+$/.test(id)) {
+            return { error: `Invalid station id ${id}`, source: 'otd', code: 'NOTFOUND' }
+        }
+        // OpenTransportData (TRIAS) API token, provided via the environment only.
+        const otdToken = process.env.OPENTRANSPORTDATA_TOKEN
+        if (!otdToken) {
+            return { error: 'OPENTRANSPORTDATA_TOKEN not configured', source: 'otd' }
+        }
         const limit = await this.helpersService.stationLimit(id, defaultLimit)
         const data = `<?xml version="1.0" encoding="UTF-8"?>
 <Trias version="1.1" xmlns="http://www.vdv.de/trias" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -64,7 +74,7 @@ export class OpentransportdataController {
             data,
             {
                 headers: {
-                    Authorization: '57c5dbbbf1fe4d00010000187f09dc4f841545f96c36966cd046d71d',
+                    Authorization: otdToken,
                     'Content-type': 'text/xml',
                 },
             },

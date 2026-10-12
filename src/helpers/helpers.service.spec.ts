@@ -27,10 +27,7 @@ describe('HelpersService', () => {
         }
 
         const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                HelpersService,
-                { provide: SlackService, useValue: mockSlackService },
-            ],
+            providers: [HelpersService, { provide: SlackService, useValue: mockSlackService }],
         }).compile()
 
         service = module.get<HelpersService>(HelpersService)

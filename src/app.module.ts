@@ -21,6 +21,8 @@ import { Request, Response, NextFunction } from 'express'
 import { OpentransportdataModule } from './opentransportdata/opentransportdata.module'
 import { SlackModule } from './slack/slack.module'
 import { AppConfigModule } from './config/config.module'
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
+import { APP_GUARD } from '@nestjs/core'
 
 @Injectable()
 export class AppLoggerMiddleware implements NestMiddleware {
@@ -51,6 +53,9 @@ export class AppLoggerMiddleware implements NestMiddleware {
 
 @Module({
     imports: [
+        // Global per-IP rate limit (requires trust proxy, see main.ts, so the
+        // client IP from x-forwarded-for is used rather than the nginx IP).
+        ThrottlerModule.forRoot({ ttl: 60, limit: 120 }),
         StationsModule,
         DbModule,
         ZvvModule,
@@ -67,7 +72,7 @@ export class AppLoggerMiddleware implements NestMiddleware {
         AppConfigModule,
     ],
     controllers: [],
-    providers: [],
+    providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule implements NestModule {
     configure(consumer: MiddlewareConsumer): void {

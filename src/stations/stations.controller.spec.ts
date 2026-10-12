@@ -24,9 +24,7 @@ describe('StationsController', () => {
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [StationsController],
-            providers: [
-                { provide: HelpersService, useValue: mockHelpersService },
-            ],
+            providers: [{ provide: HelpersService, useValue: mockHelpersService }],
         }).compile()
 
         controller = module.get<StationsController>(StationsController)
@@ -53,8 +51,8 @@ describe('StationsController', () => {
                         StopLocation: {
                             extId: '8591053',
                             name: 'Zürich, Limmatstrasse',
-                            lon: 8.5320,
-                            lat: 47.3850,
+                            lon: 8.532,
+                            lat: 47.385,
                         },
                     },
                 ],
@@ -113,15 +111,15 @@ describe('StationsController', () => {
                         StopLocation: {
                             extId: null,
                             name: 'Invalid Station',
-                            lon: 8.5320,
-                            lat: 47.3850,
+                            lon: 8.532,
+                            lat: 47.385,
                         },
                     },
                     {
                         StopLocation: {
                             name: 'Missing extId Station',
-                            lon: 8.5330,
-                            lat: 47.3860,
+                            lon: 8.533,
+                            lat: 47.386,
                         },
                     },
                 ],
@@ -230,7 +228,7 @@ describe('StationsController', () => {
                             extId: '8503002',
                             name: 'Zürich Oerlikon',
                             lon: 8.55,
-                            lat: 47.40,
+                            lat: 47.4,
                         },
                     },
                 ],
